@@ -13,7 +13,7 @@ const Advance = ({ orders, setOrders }) => {
   const [modalMessage, setModalMessage] = useState(""); // Modal message
 
   const advpassword = localStorage.getItem("advpassword")
-  const AdvPassword = advpassword;
+  const AdvPassword = "1234";
   console.log("Advance password is :",AdvPassword);
 
   useEffect(() => {

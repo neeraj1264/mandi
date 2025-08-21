@@ -73,11 +73,31 @@ export const CustomerData = () => {
     setFilteredCustomers(results);
   }, [Search, customers]);
 
-  // Helper function to calculate lifetime order total for a given customer's phone number
-  const getLifetimeOrderTotal = (phone) => {
-    return orders
-      .filter((order) => String(order.phone) === String(phone))
-      .reduce((sum, order) => sum + order.totalAmount, 0);
+  // --- NEW: compute totals for a customer by phone ---
+  const getCustomerTotals = (phone) => {
+    const custOrders = orders.filter((order) => String(order.phone) === String(phone));
+
+    // initialize totals
+    const totals = custOrders.reduce(
+      (acc, order) => {
+        // defensive numeric parsing
+        const totalAmount = Number(order.totalAmount) || 0;
+        const paidAmount = Number(order.paidAmount) || 0;
+        const creditAmount = Number(order.creditAmount) || 0;
+
+        acc.totalSale += totalAmount;      // sum of totalAmount
+        acc.totalPaid += paidAmount;       // sum of paid amounts
+        acc.totalCredit += creditAmount;   // sum of credit amounts (owed)
+        return acc;
+      },
+      { totalSale: 0, totalPaid: 0, totalCredit: 0 }
+    );
+
+    // round to 2 decimals to avoid floating point weirdness
+    totals.totalSale = Number(totals.totalSale.toFixed(2));
+    totals.totalPaid = Number(totals.totalPaid.toFixed(2));
+    totals.totalCredit = Number(totals.totalCredit.toFixed(2));
+    return totals;
   };
 
   // Toggle the expanded customer details (show order items grouped by date)
@@ -108,105 +128,150 @@ export const CustomerData = () => {
               <p className="no-customers-message">No customers found.</p>
             ) : (
               <ul className="customer-list">
-                {filteredCustomers.map((customer, index) => (
-                  <li
-                    key={index}
-                    className="customer-item"
-                    onClick={() => handleCustomerClick(customer.phone)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <h3 className="customer-title">Customer {index + 1}</h3>
-                    <p>
-                      <strong>Name:</strong> {customer.name}
-                    </p>
-                    <p>
-                      <strong>Phone:</strong> {customer.phone}
-                    </p>
-                    <p>
-                      <strong>Address:</strong> {customer.address}
-                    </p>
-                    <p>
-                      <strong>Total Lifetime Spend:</strong> ₹
-                      {getLifetimeOrderTotal(customer.phone).toFixed(2)}
-                    </p>
-                    {/* Expanded view: display orders grouped by date */}
-                    {expandedCustomer === customer.phone && (
-                      <div className="customer-orders">
-                        {(() => {
-                          // Filter orders for the current customer
-                          const customerOrders = orders.filter(
-                            (order) =>
-                              String(order.phone) === String(customer.phone)
-                          );
+                {filteredCustomers.map((customer, index) => {
+                  const totals = getCustomerTotals(customer.phone);
+                  return (
+                    <li
+                      key={index}
+                      className="customer-item"
+                      onClick={() => handleCustomerClick(customer.phone)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <h3 className="customer-title">Customer {index + 1}</h3>
+                      <p>
+                        <strong>Name:</strong> {customer.name}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong> {customer.phone}
+                      </p>
+                      <p>
+                        <strong>Address:</strong> {customer.address}
+                      </p>
 
-                          // Group orders by the date (using local date string)
-                          const ordersByDate = customerOrders.reduce(
-                            (group, order) => {
-                              const dateKey = new Date(
-                                order.timestamp
-                              ).toLocaleDateString();
-                              if (!group[dateKey]) {
-                                group[dateKey] = [];
-                              }
-                              group[dateKey].push(order);
-                              return group;
-                            },
-                            {}
-                          );
+                      {/* NEW: show Total Sale and Total Credit */}
+                      <p>
+                        <strong>Total Sale:</strong> ₹{totals.totalSale.toFixed(2)}
+                      </p>
+                      <p>
+                        <strong>Total Credit:</strong> ₹{totals.totalCredit.toFixed(2)}
+                      </p>
+                      <p>
+                        <strong>Total Cash:</strong> ₹{totals.totalPaid.toFixed(2)}
+                      </p>
 
-                          // Sort dates in descending order (newest first)
-                          const sortedDates = Object.keys(ordersByDate).sort(
-                            (a, b) => new Date(b) - new Date(a)
-                          );
-
-                          return sortedDates.map((date, idx) => {
-                            const ordersOnDate = ordersByDate[date];
-
-                            // Calculate the total price for orders on this date
-                            const totalOnDate = ordersOnDate.reduce(
-                              (sum, order) => sum + order.totalAmount,
-                              0
+                      {/* Expanded view: display orders grouped by date */}
+                      {expandedCustomer === customer.phone && (
+                        <div className="customer-orders">
+                          {(() => {
+                            // Filter orders for the current customer
+                            const customerOrders = orders.filter(
+                              (order) =>
+                                String(order.phone) === String(customer.phone)
                             );
 
-                            return (
-                              <div
-                                key={idx}
-                                className="customer-order-date-group"
-                              >
-                                <h4>Date: {date}</h4>
-                                <ul>
-                                  {ordersOnDate.map((order, orderIndex) => (
-                                    <li key={order.id || orderIndex}>
-                                      <span className="time">
-                                        Time:{" "}
-                                        {new Date(
-                                          order.timestamp
-                                        ).toLocaleTimeString()}
-                                      </span>
-                                      <ul>
-                                        {order.products.map(
-                                          (product, pIndex) => (
-                                            <li key={pIndex}>
-                                              {pIndex + 1}. {product.name}
-                                            </li>
-                                          )
-                                        )}
-                                      </ul>
-                                    </li>
-                                  ))}
-                                </ul>
-                                <p>
-                                  <strong>Total Price Spent on {date}:</strong>{" "}
-                                  ₹{totalOnDate.toFixed(2)}
-                                </p>
-                              </div>
+                            // Group orders by the date (using local date string)
+                            const ordersByDate = customerOrders.reduce(
+                              (group, order) => {
+                                const dateKey = new Date(
+                                  order.timestamp
+                                ).toLocaleDateString();
+                                if (!group[dateKey]) {
+                                  group[dateKey] = [];
+                                }
+                                group[dateKey].push(order);
+                                return group;
+                              },
+                              {}
                             );
-                          });
-                        })()}
-                      </div>
-                    )}
-                  </li>
-                ))}
+
+                            // Sort dates in descending order (newest first)
+                            const sortedDates = Object.keys(ordersByDate).sort(
+                              (a, b) => new Date(b) - new Date(a)
+                            );
+
+                            return sortedDates.map((date, idx) => {
+                              const ordersOnDate = ordersByDate[date];
+
+                              // Calculate the total price for orders on this date
+                              const totalOnDate = ordersOnDate.reduce(
+                                (sum, order) => sum + (Number(order.totalAmount) || 0),
+                                0
+                              );
+
+                              // Calculate paid/credit on this date
+                              const paidOnDate = ordersOnDate.reduce(
+                                (sum, order) => sum + (Number(order.paidAmount) || 0),
+                                0
+                              );
+                              const creditOnDate = ordersOnDate.reduce(
+                                (sum, order) => sum + (Number(order.creditAmount) || 0),
+                                0
+                              );
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className="customer-order-date-group"
+                                >
+                                  <h4>Date: {date}</h4>
+                                  <ul>
+                                    {ordersOnDate.map((order, orderIndex) => (
+                                      <li key={order.id || orderIndex} style={{ marginBottom: 8 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                          <span className="time">
+                                            Time:{" "}
+                                            {new Date(
+                                              order.timestamp
+                                            ).toLocaleTimeString()}
+                                          </span>
+                                          <span style={{ fontWeight: 600 }}>
+                                            ₹{(Number(order.totalAmount) || 0).toFixed(2)}
+                                          </span>
+                                        </div>
+
+                                        {/* NEW: show sale type and paid/credit breakdown */}
+                                        <div style={{ marginTop: 6, marginBottom: 6 }}>
+                                          <strong>Sale Type:</strong> {order.saleType || "cash"}
+                                          {"  |  "}
+                                          <strong>Paid:</strong> ₹{(Number(order.paidAmount) || 0).toFixed(2)}
+                                          {"  |  "}
+                                          <strong>Credit:</strong> ₹{(Number(order.creditAmount) || 0).toFixed(2)}
+                                        </div>
+
+                                        <ul style={{ marginLeft: 14 }}>
+                                          {order.products && order.products.map(
+                                            (product, pIndex) => (
+                                              <li key={pIndex}>
+                                                {pIndex + 1}. {product.name}{" "}
+                                                {product.quantity ? `x${product.quantity}` : ""}
+                                                {" — "}₹{(Number(product.price) || 0).toFixed(2)}
+                                              </li>
+                                            )
+                                          )}
+                                        </ul>
+                                      </li>
+                                    ))}
+                                  </ul>
+
+                                  <p>
+                                    <strong>Total Price Spent on {date}:</strong>{" "}
+                                    ₹{totalOnDate.toFixed(2)}
+                                  </p>
+                                  <p>
+                                    <strong>Paid on {date}:</strong> ₹{paidOnDate.toFixed(2)}
+                                  </p>
+                                  <p>
+                                    <strong>Credit on {date}:</strong> ₹{creditOnDate.toFixed(2)}
+                                  </p>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </>
@@ -215,3 +280,5 @@ export const CustomerData = () => {
     </>
   );
 };
+
+export default CustomerData;

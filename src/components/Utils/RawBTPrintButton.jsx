@@ -6,8 +6,11 @@ export default function RawBTPrintButton({
   parsedDiscount,
   deliveryChargeAmount,
   customerPhone,
- icon: Icon,
+  customerName,
+  icon: Icon,
   timestamp,
+  totalCustomerCredit,
+  gstAmount,
 }){
 
   // Helper to calculate total price
@@ -15,7 +18,12 @@ export default function RawBTPrintButton({
     items.reduce((sum, p) => sum + p.price * (p.quantity || 1), 0);
 
  const handleRawBTPrint = () => {
-    const hasDeliveryCharge = deliveryChargeAmount !== 0; // Check if delivery charge exists
+    const hasDeliveryCharge = deliveryChargeAmount > 0; // Check if delivery charge exists
+    const hasgstAmount = gstAmount > 0;
+    const hasDiscount = parsedDiscount > 0; // Check if discount exists
+    const hasCustomerName = customerName && customerName.trim() !== ""; // Check if customer name exists
+    const hasCustomerPhone = customerPhone && String(customerPhone).trim() !== ""; // Check if customer phone exists
+    const hasCredit = totalCustomerCredit > 0; // Check if credit exists
 
     const orderWidth = 2;
     const nameWidth = 16; // Set a fixed width for product name
@@ -104,28 +112,57 @@ export default function RawBTPrintButton({
       hour12: true,
     });
 
-    const invoiceText = `
-  \x1B\x21\x30 Foodies Hub \x1B\x21\x00
-  \x1B\x61\x01  Pehowa, Haryana, 136128\x1B\x61\x00
-  \x1B\x61\x01  Phone: +91 70158-23645\x1B\x61\x00
-
+    let invoiceText = `
+  \x1B\x21\x30Chhinnamastika\x1B\x21\x00
+  \x1B\x21\x30   Traders\x1B\x21\x00
+ \x1B\x61\x01(Fruits & Vegetables Dealers)\x1B\x61\x00
+  \x1B\x61\x01  Opp. Telephone Exchange,\x1B\x61\x00
+  \x1B\x61\x01   Guru Har Sahai (Fzr.),\x1B\x61\x00
+  \x1B\x61\x01   9815832778  7087432778\x1B\x61\x00
+  \x1B\x61\x01   9517543243  9858300043\x1B\x61\x00
   \x1B\x21\x10-----Invoice Details-----\x1B\x21\x00
-  
   Bill No: #${Math.floor(1000 + Math.random() * 9000)}
   Date: ${formattedDate} ${formattedTime}
-  Phone: ${customerPhone || "N/A"}
-  ${detailedItems}
-  ${hasDeliveryCharge ? `           Item Total:  ${totalprice} ` : " "}
-  ${hasDeliveryCharge ? `      Delivery Charge: +${delivery}` : " "}
-  ${parsedDiscount ? `             Discount: -${DiscountAmount}\n${dash}` : " "} 
-\x1B\x21\x30\x1B\x34Total: Rs ${
-      calculateTotalPrice(productsToSend) + deliveryChargeAmount - parsedDiscount
-    }/-\x1B\x21\x00\x1B\x35
+  `;
 
+  // Add customer details only if they exist
+    if (hasCustomerName) {
+      invoiceText += `Name: ${customerName}\n`;
+    }
+    if (hasCustomerPhone) {
+      invoiceText += `  Phone: ${customerPhone}\n`;
+    }
+
+    invoiceText += `${detailedItems}\n`;
+
+    // Add delivery charge and discount only if they exist
+    if (hasDeliveryCharge || hasDiscount || hasgstAmount) {
+      invoiceText += `           Item Total:  ${totalprice}\n`;
+    }
+    if (hasDeliveryCharge) {
+      invoiceText += `      Delivery Charge: +${delivery}\n`;
+    }
+    if (hasDiscount) {
+      invoiceText += `             Discount: -${DiscountAmount}\n`;
+    }
+    if (hasgstAmount) {
+      invoiceText += `             GST: (2%) +${gstAmount}\n${dash}\n`
+    }
+
+invoiceText += `\x1B\x21\x30\x1B\x34Total: Rs ${
+      calculateTotalPrice(productsToSend) + deliveryChargeAmount + gstAmount - parsedDiscount
+    }/-\x1B\x21\x00\x1B\x35\n`;
+
+    // Add credit information only if it exists
+    if (hasCredit) {
+      invoiceText += `  Balance: ${totalCustomerCredit}/-\n`;
+    }
+
+    invoiceText += `  
     Thank You Visit Again!
   ---------------------------
   
-       Powered by BillZo
+Powered by BillZo || 7015823645
        
   `;
 

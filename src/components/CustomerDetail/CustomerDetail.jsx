@@ -2,11 +2,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { handleScreenshot } from "../Utils/DownloadPng"; // Import the function
+import { handleScreenshot } from "../Utils/DownloadPng";
 import "./Customer.css";
-// import { handleScreenshotAsPDF } from "../Utils/DownloadPdf";
 import Header from "../header/Header";
-import { fetchcustomerdata, sendorder, setdata, sendInvoiceEmail } from "../../api";
+import {
+  fetchcustomerdata,
+  sendorder,
+  setdata,
+  sendInvoiceEmail,
+  fetchOrders,
+} from "../../api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import WhatsAppButton from "../Utils/WhatsappOrder";
@@ -20,52 +25,81 @@ const toastOptions = {
   draggable: true,
   theme: "dark",
 };
+
+// Consistent number parsing function
+const parseNumber = (value) => {
+  if (value === null || value === undefined || value === "") return 0;
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
+// Consistent calculation function
+const calculateOrderTotals = (products, delivery, discount, applyGst) => {
+  const itemsTotal = products.reduce(
+    (sum, product) =>
+      sum + parseNumber(product.price) * parseNumber(product.quantity || 1),
+    0
+  );
+
+  const deliveryAmount = parseNumber(delivery);
+  const discountAmount = parseNumber(discount);
+
+  let finalTotal = itemsTotal + deliveryAmount - discountAmount;
+
+   // Calculate GST if applicable
+  let gstAmount = 0;
+  if (applyGst) {
+    gstAmount = parseFloat((finalTotal * 0.02).toFixed(2));
+    finalTotal += gstAmount;
+  }
+
+  return {
+    itemsTotal: parseFloat(itemsTotal.toFixed(2)),
+    deliveryAmount: parseFloat(deliveryAmount.toFixed(2)),
+    discountAmount: parseFloat(discountAmount.toFixed(2)),
+    gstAmount: gstAmount,
+    finalTotal: parseFloat(finalTotal.toFixed(2)),
+  };
+};
+
 const CustomerDetail = () => {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
 
-  const [deliveryCharge, setDeliveryCharge] = useState();
-  const [discount, setDiscount] = useState(); // New discount state
-  const parsedDiscount = parseFloat(discount) || 0; // Parsed discount
-
+  const [deliveryCharge, setDeliveryCharge] = useState("");
+  const [discount, setDiscount] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-  const [productsToSend, setproductsToSend] = useState([]);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [productsToSend, setProductsToSend] = useState([]);
   const [orders, setOrders] = useState([]);
-  // const getdeliveryCharge = localStorage.getItem("deliveryCharge");
-  const deliveryChargeAmount = parseFloat(deliveryCharge) || 0;
-  // State to hold all saved customers for auto-fill
   const [savedCustomers, setSavedCustomers] = useState([]);
-  // State to hold suggestions based on current phone input
   const [phoneSuggestions, setPhoneSuggestions] = useState([]);
-  // New state for name suggestions
   const [nameSuggestions, setNameSuggestions] = useState([]);
-
-  const invoiceRef = useRef(); // Reference to the hidden invoice content
+  const [totalCustomerCredit, setTotalCustomerCredit] = useState(0);
+  const [applyGst, setApplyGst] = useState(false); // GST toggle state
+  const invoiceRef = useRef();
   const navigate = useNavigate();
 
   const RestorentName = localStorage.getItem("RestorentName");
 
+  const [saleType, setSaleType] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
+
   useEffect(() => {
-    // Load selected products and total amount from localStorage
+    // Load selected products from localStorage
     const storedProducts =
       JSON.parse(localStorage.getItem("productsToSend")) || [];
-    const storedAmount = parseFloat(localStorage.getItem("totalAmount")) || 0;
     const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
     setOrders(savedOrders);
-
-    setproductsToSend(storedProducts);
-    setTotalAmount(storedAmount);
+    setProductsToSend(storedProducts);
   }, []);
 
   useEffect(() => {
-    // Fetch customer data from API (or use localStorage fallback)
+    // Fetch customer data from API
     const fetchData = async () => {
       try {
         const response = await fetchcustomerdata();
-        console.log("Fetched customers:", response);
         const customersArray = Array.isArray(response)
           ? response
           : response.data || [];
@@ -82,7 +116,7 @@ const CustomerDetail = () => {
     fetchData();
   }, []);
 
-  // Update suggestions based on current phone input (prefix match)
+  // Update suggestions based on current phone input
   useEffect(() => {
     if (customerPhone.trim().length === 10) {
       setPhoneSuggestions([]);
@@ -96,7 +130,7 @@ const CustomerDetail = () => {
     }
   }, [customerPhone, savedCustomers]);
 
-  // New effect for filtering suggestions by customer name
+  // Update suggestions based on current name input
   useEffect(() => {
     if (customerName.trim() === "") {
       setNameSuggestions([]);
@@ -110,7 +144,32 @@ const CustomerDetail = () => {
     }
   }, [customerName, savedCustomers]);
 
-  // When a suggestion is clicked, fill the fields and clear suggestions.
+  useEffect(() => {
+    const calculateTotalCustomerCredit = async () => {
+      if (customerPhone) {
+        try {
+          // Fetch all orders for this customer
+          const allOrders = await fetchOrders();
+          const customerOrders = allOrders.filter(
+            (order) => String(order.phone) === String(customerPhone)
+          );
+
+          // Calculate total credit
+          const totalCredit = customerOrders.reduce(
+            (sum, order) => sum + (Number(order.creditAmount) || 0),
+            0
+          );
+
+          setTotalCustomerCredit(totalCredit);
+        } catch (error) {
+          console.error("Error fetching orders for credit calculation:", error);
+        }
+      }
+    };
+
+    calculateTotalCustomerCredit();
+  }, [customerPhone]);
+
   const handleSuggestionClick = (customer) => {
     setCustomerPhone(String(customer.phone));
     setCustomerName(customer.name);
@@ -119,13 +178,12 @@ const CustomerDetail = () => {
     setNameSuggestions([]);
   };
 
-  // New handler for clicking on a name suggestion.
   const handleNameSuggestionClick = (customer) => {
     setCustomerName(customer.name);
     setCustomerPhone(String(customer.phone));
     setCustomerAddress(customer.address);
     setNameSuggestions([]);
-    setPhoneSuggestions([]); // Optionally clear phone suggestions too
+    setPhoneSuggestions([]);
   };
 
   const handleBack = () => {
@@ -133,10 +191,57 @@ const CustomerDetail = () => {
   };
 
   const handleSendClick = async () => {
-    const productsToSend = JSON.parse(localStorage.getItem("productsToSend"));
+    if (!saleType) {
+      toast.error("Please select a sale type before proceeding", toastOptions);
+      return;
+    }
+    // Calculate totals using consistent function
+    const totals = calculateOrderTotals(
+      productsToSend,
+      deliveryCharge,
+      discount,
+      applyGst,
+    );
+    const finalTotal = totals.finalTotal;
+
+    // Compute paid/credit depending on sale type
+    let resolvedPaid = 0;
+    let resolvedCredit = 0;
+
+    if (saleType === "cash") {
+      resolvedPaid = finalTotal;
+      resolvedCredit = 0;
+    } else if (saleType === "credit") {
+      resolvedPaid = 0;
+      resolvedCredit = finalTotal;
+    } else if (saleType === "partial") {
+      const p = parseNumber(paidAmount);
+      if (p <= 0 || p > finalTotal) {
+        toast.error(
+          "Please enter valid paid amount for partial payment",
+          toastOptions
+        );
+        return;
+      }
+      resolvedPaid = p;
+      resolvedCredit = parseFloat((finalTotal - p).toFixed(2));
+    }
+
+    // Validate that paid + credit equals total
+    if (Math.abs(resolvedPaid + resolvedCredit - finalTotal) > 0.01) {
+      console.error("Payment validation failed:", {
+        paid: resolvedPaid,
+        credit: resolvedCredit,
+        total: finalTotal,
+        difference: resolvedPaid + resolvedCredit - finalTotal,
+      });
+      toast.error("Payment calculation error. Please try again.", toastOptions);
+      return;
+    }
+
     if (!productsToSend || productsToSend.length === 0) {
       toast.error("Please add product before proceed", toastOptions);
-      return; // Exit the function early
+      return;
     }
 
     setShowPopup(true);
@@ -151,19 +256,23 @@ const CustomerDetail = () => {
     const order = {
       id: orderId,
       products: productsToSend,
-      totalAmount:
-        calculateTotalPrice(productsToSend) +
-        (parseFloat(deliveryCharge) || 0) -
-        parsedDiscount,
+      totalAmount: finalTotal,
       name: customerName,
       phone: customerPhone,
       address: customerAddress,
       email: customerEmail,
       timestamp: new Date().toISOString(),
-      discount: parsedDiscount, // save discount
-      delivery: parseFloat(deliveryCharge) || 0,
+      discount: totals.discountAmount,
+      delivery: totals.deliveryAmount,
+      saleType,
+      gstApplied: applyGst,
+      gstAmount: gstAmount,
+      paidAmount: resolvedPaid,
+      creditAmount: resolvedCredit,
     };
-    console.log(order);
+
+    console.log("Order being sent to DB:", order);
+
     const customerDataObject = {
       id: orderId,
       name: customerName,
@@ -171,40 +280,41 @@ const CustomerDetail = () => {
       address: customerAddress,
       email: customerEmail,
       timestamp: new Date().toISOString(),
+      paidAmount: resolvedPaid,
+      creditAmount: resolvedCredit,
     };
 
-    // Get the current orders from localStorage
-    const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-
-    // Add the new order to the list
-    savedOrders.push(order);
-
-    // Save the updated orders back to localStorage
-    localStorage.setItem("orders", JSON.stringify(savedOrders));
-
     try {
-      console.log("🔶 Final order object:", order);
-console.log("🔶 JSON payload:", JSON.stringify(order));
-
       // Send the order to your backend to be saved in MongoDB
       const data = await sendorder(order);
       console.log("Order created:", data);
 
-      // You can clear localStorage or perform any other actions as needed
-      // localStorage.removeItem("products"); // Example
+      // Verify the response matches what we sent
+      if (data && data.totalAmount !== undefined) {
+        const responseTotal = parseNumber(data.totalAmount);
+        if (Math.abs(responseTotal - finalTotal) > 0.01) {
+          console.error("Database response doesn't match sent total:", {
+            sent: finalTotal,
+            received: responseTotal,
+          });
+        }
+      }
     } catch (error) {
       console.error("Error sending order:", error.message);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+      }
     }
 
-if (customerEmail && customerEmail.trim() !== '') {
-    try {
-      await sendInvoiceEmail(order.id, customerEmail);
-      console.log(`invoice sent to ${customerEmail}`);
-    } catch (err) {
-      console.error("Email send error", err);
-      toast.error("Failed to send email", toastOptions);
+    if (customerEmail && customerEmail.trim() !== "") {
+      try {
+        await sendInvoiceEmail(order.id, customerEmail);
+        console.log(`invoice sent to ${customerEmail}`);
+      } catch (err) {
+        console.error("Email send error", err);
+        toast.error("Failed to send email", toastOptions);
+      }
     }
-  } 
 
     try {
       const customerDataResponse = await setdata(customerDataObject);
@@ -225,18 +335,14 @@ if (customerEmail && customerEmail.trim() !== '') {
 
   const handleClosePopup = () => {
     setShowPopup(false);
-
-    // Navigate to the invoice page
     navigate("/invoice");
-
     window.location.reload();
   };
 
   const handlePngDownload = () => {
-    // Show the hidden invoice, take the screenshot, and then hide it again
     invoiceRef.current.style.display = "block";
     setTimeout(() => {
-      handleScreenshot("invoice");
+      handleScreenshot("mobileinvoice");
       invoiceRef.current.style.display = "none";
     }, 10);
   };
@@ -316,23 +422,12 @@ if (customerEmail && customerEmail.trim() !== '') {
     }
   };
 
-  // Helper function to calculate total price
-  const calculateTotalPrice = (products = []) => {
-    return products.reduce(
-      (total, product) => total + product.price * product.quantity,
-      0
-    );
-  };
-
-  // Handle customer phone input validation
-  const handlePhoneChange = (e) => {
-    const phoneValue = e.target.value;
-
-    // Only allow numeric input and ensure length is <= 10
-    // if (/^\d*$/.test(phoneValue) && phoneValue.length <= 10) {
-    setCustomerPhone(phoneValue);
-    // }
-  };
+  // Calculate totals for UI display
+  const totals = calculateOrderTotals(productsToSend, deliveryCharge, discount, applyGst);
+  const deliveryChargeAmount = totals.deliveryAmount;
+  const parsedDiscount = totals.discountAmount;
+  const gstAmount = totals.gstAmount;
+  const finalTotal = totals.finalTotal;
 
   return (
     <div>
@@ -345,7 +440,6 @@ if (customerEmail && customerEmail.trim() !== '') {
           onChange={(e) => setCustomerName(e.target.value)}
           placeholder="Customer name..."
         />
-        {/* Name Suggestions Dropdown */}
         {nameSuggestions.length > 0 && (
           <ul
             className="suggestions"
@@ -364,7 +458,7 @@ if (customerEmail && customerEmail.trim() !== '') {
           >
             {nameSuggestions.map((suggestion) => (
               <li
-                key={suggestion.phone} // Assuming phone is unique
+                key={suggestion.phone}
                 onClick={() => handleNameSuggestionClick(suggestion)}
                 style={{
                   padding: "0.5rem",
@@ -382,11 +476,10 @@ if (customerEmail && customerEmail.trim() !== '') {
         <input
           type="text"
           value={customerPhone}
-          onChange={handlePhoneChange}
+          onChange={(e) => setCustomerPhone(e.target.value)}
           placeholder="Customer phone..."
         />
       </div>
-      {/* Suggestions Dropdown */}
       {phoneSuggestions.length > 0 && (
         <ul
           className="suggestions"
@@ -426,13 +519,13 @@ if (customerEmail && customerEmail.trim() !== '') {
           placeholder="Customer address..."
         />
       </div>
-       <div className="cust-inputs">
-         <input
-           type="email"
-           value={customerEmail}
-           onChange={(e) => setCustomerEmail(e.target.value)}
-           placeholder="Customer email..."
-         />
+      <div className="cust-inputs">
+        <input
+          type="email"
+          value={customerEmail}
+          onChange={(e) => setCustomerEmail(e.target.value)}
+          placeholder="Customer email..."
+        />
       </div>
       <div className="cust-inputs">
         <input
@@ -450,119 +543,117 @@ if (customerEmail && customerEmail.trim() !== '') {
           placeholder="Discount amount..."
         />
       </div>
-      {/* Hidden Invoice Content */}
-      <div
-        className="invoice-content"
-        id="invoice"
-        // ref={invoiceRef}
-        style={{ display: "none" }}
-      >
-        <img src="/logo.png" alt="Logo" width={100} className="logo" />
-        <h1 style={{ textAlign: "center", margin: 0, fontSize: "25px" }}>
-          Urban Pizzeria
-        </h1>
-        <p style={{ textAlign: "center", margin: 0, fontSize: "15px" }}>
-          Pehowa, Haryana, 136128
-        </p>
-        <p style={{ textAlign: "center", margin: 0, fontSize: "15px" }}>
-          Phone Number - +91 81689-01827
-        </p>
-        <hr />
-        <h2 style={{ textAlign: "center", margin: 0, fontSize: "20px" }}>
-          Invoice Details
-        </h2>
-        <div className="customer-info">
-          {/* Bill No and Date */}
-          <p style={{ fontSize: "15px" }}>
-            Bill
-            No&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            {`#${Math.floor(1000 + Math.random() * 9000)}`}{" "}
-            {/* Random 6-digit bill number */}
-          </p>
-          <p style={{ fontSize: "15px" }}>
-            Created
-            On&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            {new Date().toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            }) +
-              " " +
-              new Date().toLocaleTimeString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true, // Enables 12-hour format
-              })}
-          </p>
 
-          <p style={{ fontSize: "15px" }}>
-            Customer Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          </p>
-          <p style={{ fontSize: "15px" }}>
-            Phone Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -
-            &nbsp;&nbsp;&nbsp;&nbsp;{customerPhone ? customerPhone : "...."}
-          </p>
-          <p style={{ fontSize: "15px" }}>
-            Address&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            {customerAddress ? customerAddress : "...."}
-          </p>
+{/* GST Toggle */}
+    {/* GST Toggle - Improved UI */}
+<div className="cust-inputs">
+  <div style={{
+    display: "flex", 
+    alignItems: "center", 
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    backgroundColor: "#f8f9fa",
+    borderRadius: "1rem",
+    border: "2px solid black",
+    margin: "8px auto 16px",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+    width: "90%",
+  }}>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <span style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "24px",
+        height: "24px",
+        borderRadius: "4px",
+        border: "2px solid #4CAF50",
+        marginRight: "12px",
+        backgroundColor: applyGst ? "#4CAF50" : "white",
+        transition: "all 0.2s ease"
+      }}>
+        {applyGst && (
+          <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+            <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </span>
+      <span style={{ 
+        fontWeight: "500", 
+        color: "#333",
+        fontSize: "16px"
+      }}>
+        Apply 2% GST
+      </span>
+    </div>
+    
+    <div 
+      onClick={() => setApplyGst(!applyGst)}
+      style={{
+        width: "48px",
+        height: "24px",
+        borderRadius: "12px",
+        backgroundColor: applyGst ? "#4CAF50" : "#ccc",
+        position: "relative",
+        cursor: "pointer",
+        transition: "all 0.3s ease"
+      }}
+    >
+      <div style={{
+        position: "absolute",
+        top: "2px",
+        left: applyGst ? "26px" : "2px",
+        width: "20px",
+        height: "20px",
+        borderRadius: "50%",
+        backgroundColor: "white",
+        transition: "all 0.3s ease",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+      }} />
+    </div>
+  </div>
+</div>
+
+      <div style={{ marginBottom: "8rem" }}>
+        <div className="cust-inputs">
+          <label style={{ display: "block", margin: "0 0 6px 21px" }}>
+            Sale Type
+          </label>
+          <select
+            className="SaleType"
+            value={saleType}
+            onChange={(e) => {
+              setSaleType(e.target.value);
+              if (e.target.value === "cash") setPaidAmount("");
+            }}
+            style={{ width: "90%", padding: "8px" }}
+          >
+            <option value="" disabled>
+              -- Select Sale Type --
+            </option>
+            <option value="cash">Cash Sale*</option>
+            <option value="credit">Credit Sale*</option>
+            <option value="partial">Partial Payment*</option>
+          </select>
         </div>
-        <table>
-          <thead>
-            <tr className="productname">
-              <th>Product Name</th>
-              <th>Quantity</th>
-              <th>Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productsToSend.map((product, index) => (
-              <tr key={index} className="productdetail">
-                <td>
-                  {product.size
-                    ? `${product.name} (${product.size})`
-                    : product.name}
-                </td>
-                <td style={{ textAlign: "Center" }}>{product.quantity || 1}</td>
-                <td style={{ textAlign: "Center" }}>₹{product.price}</td>
-                <td style={{ textAlign: "Center" }}>
-                  ₹{product.price * (product.quantity || 1)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="total">
-          {/* <p>
-            Item Total:{" "}
-            <span>
-              ₹
-              {productsToSend
-                .reduce(
-                  (sum, product) =>
-                    sum + product.price * (product.quantity || 1),
-                  0
-                )
-                .toFixed(2)}
-            </span>
-          </p> */}
-          {/* <p>
-            Service Charge: <span>₹20.00</span>
-          </p> */}
-        </div>
-        <p className="totalAmount">
-          NetTotal: ₹
-          {productsToSend
-            .reduce(
-              (sum, product) => sum + product.price * (product.quantity || 1),
-              0
-            )
-            .toFixed(2)}
-        </p>{" "}
+
+        {saleType === "partial" && (
+          <div className="cust-inputs">
+            <input
+              type="number"
+              value={paidAmount}
+              onChange={(e) => setPaidAmount(e.target.value)}
+              placeholder="Amount paid now..."
+            />
+          </div>
+        )}
       </div>
+
+      {/* Hidden Invoice Content */}
+      <div className="invoice-content" id="invoice" style={{ display: "none" }}>
+        {/* ... existing invoice content ... */}
+      </div>
+
       {/* mobile print content */}
       <div
         className="invoice-content"
@@ -572,7 +663,7 @@ if (customerEmail && customerEmail.trim() !== '') {
       >
         <img src="/logo.png" alt="Logo" width={100} className="logo" />
         <h1 style={{ textAlign: "center", margin: 0, fontSize: "25px" }}>
-          Foodies Hub
+          Chhinnamastika Traders
         </h1>
         <p
           style={{
@@ -582,10 +673,30 @@ if (customerEmail && customerEmail.trim() !== '') {
             padding: "0 2px",
           }}
         >
-          Pehowa, Haryana, 136128
+          (Fruits & Vegetables Dealers)
+        </p>
+         <p
+          style={{
+            textAlign: "center",
+            margin: 0,
+            fontSize: "14px",
+            padding: "0 2px",
+          }}
+        >
+          Opp. Telephone Exchange,
+        </p>
+         <p
+          style={{
+            textAlign: "center",
+            margin: 0,
+            fontSize: "14px",
+            padding: "0 2px",
+          }}
+        >
+          Guru Har Sahai (Fzr.)
         </p>
         <p style={{ textAlign: "center", margin: 0, fontSize: "14px" }}>
-          +91 70158-23645
+          9815832778  7087432778 <br /> 9517543243  9858300043
         </p>
         <hr />
         <h2 style={{ textAlign: "center", margin: 0, fontSize: "20px" }}>
@@ -594,8 +705,7 @@ if (customerEmail && customerEmail.trim() !== '') {
         <div className="customer-info">
           <p style={{ fontSize: "15px" }}>
             Bill No&nbsp;&nbsp;-&nbsp;&nbsp;
-            {`#${Math.floor(1000 + Math.random() * 9000)}`}{" "}
-            {/* Random 6-digit bill number */}
+            {`#${Math.floor(1000 + Math.random() * 9000)}`}
           </p>
           <p style={{ fontSize: "13px" }}>
             Created On:&nbsp;
@@ -609,7 +719,7 @@ if (customerEmail && customerEmail.trim() !== '') {
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
-                hour12: true, // Enables 12-hour format
+                hour12: true,
               })}
           </p>
 
@@ -650,24 +760,13 @@ if (customerEmail && customerEmail.trim() !== '') {
             ))}
           </tbody>
         </table>
-        {/* Show this whole section only if there’s a delivery charge or a discount */}
-        {(deliveryChargeAmount !== 0 || parsedDiscount !== 0) && (
+        {(deliveryChargeAmount !== 0 || parsedDiscount !== 0 || applyGst) && (
           <>
-            {/* Item total is always shown whenever any extra applies */}
             <div className="total">
               <p style={{ margin: "0" }}>Item Total</p>
-              <p style={{ margin: "0" }}>
-                {productsToSend
-                  .reduce(
-                    (sum, product) =>
-                      sum + product.price * (product.quantity || 1),
-                    0
-                  )
-                  .toFixed(2)}
-              </p>
+              <p style={{ margin: "0" }}>{totals.itemsTotal.toFixed(2)}</p>
             </div>
 
-            {/* Service Charge line: only if there is one */}
             {deliveryChargeAmount !== 0 && (
               <div className="total">
                 <p style={{ margin: "0" }}>Service Charge:</p>
@@ -677,26 +776,34 @@ if (customerEmail && customerEmail.trim() !== '') {
               </div>
             )}
 
-            {/* Discount line: only if there is one */}
             {parsedDiscount !== 0 && (
               <div className="total">
                 <p style={{ margin: "0" }}>Discount:</p>
                 <p style={{ margin: "0" }}>-{parsedDiscount.toFixed(2)}</p>
               </div>
             )}
+            {applyGst && (
+              <div className="total">
+                <p style={{ margin: "0" }}>GST (2%):</p>
+                <p style={{ margin: "0" }}>+{gstAmount.toFixed(2)}</p>
+              </div>
+            )}
           </>
         )}
-        <p className="totalAmount">
-          Net Total: ₹
-          {(
-            productsToSend.reduce(
-              (sum, product) => sum + product.price * (product.quantity || 1),
-              0
-            ) +
-            deliveryChargeAmount -
-            parsedDiscount
-          ).toFixed(2)}
-        </p>{" "}
+        <p className="totalAmount">Net Total: ₹{finalTotal.toFixed(2)}</p>
+        {totalCustomerCredit > 0 && (
+          <p
+            style={{
+              fontSize: "14px",
+              fontWeight: "bold",
+              textAlign: "center",
+              margin: "8px 0",
+              color: "#ff0000",
+            }}
+          >
+            Balance: ₹{totalCustomerCredit.toFixed(2)}
+          </p>
+        )}
         <div
           style={{
             textAlign: "center",
@@ -704,29 +811,23 @@ if (customerEmail && customerEmail.trim() !== '') {
             paddingBottom: "2rem",
           }}
         >
-          Thank You!
+          Thank You visit again!
         </div>
-        <hr />
         <div
           style={{
             textAlign: "center",
-            fontWeight: "bold",
-            fontSize: "1rem",
+            color: "grey",
+            fontSize: "10px",
+            paddingBottom: ".5rem",
           }}
         >
-          {" "}
-          Order Online
+          Powered&nbsp;By&nbsp;Billzo&nbsp;||&nbsp;7015823645
         </div>
-        <img
-          src="/qr-code.png"
-          alt="QR Code"
-          style={{ width: "80%", display: "flex", margin: "2px auto" }}
-        />
+        <hr />
       </div>
       <button onClick={handleSendClick} className="done">
         Send <FaArrowRight className="Invoice-arrow" />
       </button>
-      {/* Modal Popup */}
       {showPopup && (
         <div className="popupOverlay">
           <div className="popupContent">
@@ -737,16 +838,24 @@ if (customerEmail && customerEmail.trim() !== '') {
               deliveryCharge={deliveryCharge}
               parsedDiscount={parsedDiscount}
               customerPhone={customerPhone}
+              customerName={customerName}
               customerAddress={customerAddress}
               restaurantName={RestorentName}
+              totalCustomerCredit={totalCustomerCredit}
+              gstAmount={gstAmount}
+               applyGst={applyGst}
             />
-             <SmsOrder
+            <SmsOrder
               productsToSend={productsToSend}
               deliveryChargeAmount={deliveryChargeAmount}
               parsedDiscount={parsedDiscount}
               customerPhone={customerPhone}
+              customerName={customerName}
               customerAddress={customerAddress}
               restaurantName={RestorentName}
+              totalCustomerCredit={totalCustomerCredit}
+              gstAmount={gstAmount}
+               applyGst={applyGst}
             />
             <button onClick={handlePngDownload} className="popupButton">
               Download Invoice
@@ -754,8 +863,13 @@ if (customerEmail && customerEmail.trim() !== '') {
             <RawBTPrintButton
               productsToSend={productsToSend}
               parsedDiscount={parsedDiscount}
-              deliveryChargeAmount={parseFloat(deliveryCharge) || 0}
+              deliveryChargeAmount={deliveryChargeAmount}
               customerPhone={customerPhone}
+              customerName={customerName}
+              customerAddress={customerAddress}
+              totalCustomerCredit={totalCustomerCredit}
+              gstAmount={gstAmount}
+               applyGst={applyGst}
             />
             <button onClick={MobilePrint} className="popupButton">
               Usb Print

@@ -8,18 +8,32 @@ import RawBTPrintButton from "../Utils/RawBTPrintButton";
 import WhatsAppButton from "../Utils/WhatsappOrder";
 import { MdDelete } from "react-icons/md";
 import Rawbt3Inch from "../Utils/Rawbt3Inch";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const toastOptions = {
+  position: "bottom-right",
+  autoClose: 2000,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
 
 const History = () => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
-  const [grandTotal, setGrandTotal] = useState(0);
+  const [grandTotal, setGrandTotal] = useState({
+    total: 0,
+    cash: 0,
+    credit: 0,
+  });
   const [filter, setFilter] = useState("Today");
-  const [expandedOrderId, setExpandedOrderId] = useState(null); // Track expanded order
-  const [loading, setLoading] = useState(false); // Loading state
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [showRemoveBtn, setShowRemoveBtn] = useState(false);
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false); // Track modal visibility
-  const [modalMessage, setModalMessage] = useState(""); // Modal message
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   // Show remove button on long press
   let pressTimer;
@@ -32,53 +46,102 @@ const History = () => {
     clearTimeout(pressTimer);
   };
 
-const handleRemoveOrder = async (orderId) => {
-  try {
-    const advanceFeatured = localStorage.getItem("advancedFeature") === "true";
+  // Calculate totals function
+  const calculateTotals = (ordersArray) => {
+    let total = 0;
+    let cashTotal = 0;
+    let creditTotal = 0;
 
-    if (!advanceFeatured) {
-      // not enabled → show “feature not granted” message
-      setModalMessage("Advance feature not granted.");
-      setIsModalOpen(true);
-      return;
+    ordersArray.forEach((order) => {
+      total += order.totalAmount || 0;
+      
+      if (order.saleType === "cash") {
+        cashTotal += order.totalAmount || 0;
+      } else if (order.saleType === "credit") {
+        creditTotal += order.totalAmount || 0;
+      } else if (order.saleType === "partial") {
+        // For partial payments, add paid amount to cash and credit amount to credit
+        cashTotal += order.paidAmount || 0;
+        creditTotal += order.creditAmount || 0;
+      }
+    });
+
+    return {
+      total: parseFloat(total.toFixed(2)),
+      cash: parseFloat(cashTotal.toFixed(2)),
+      credit: parseFloat(creditTotal.toFixed(2)),
+    };
+  };
+
+  const handleRemoveOrder = async (orderId, orderPhone) => {
+    try {
+      const advanceFeatured = localStorage.getItem("advancedFeature") === "true";
+
+      if (!advanceFeatured) {
+        setModalMessage("Advance feature not granted.");
+        setIsModalOpen(true);
+        return;
+      }
+
+      const confirmDelete = window.confirm(
+        "This will permanently delete the order. Are you sure?"
+      );
+      if (!confirmDelete) return;
+
+      // Delete the order
+      await removeOrder(orderId);
+
+      // Update customer totals in database
+      // if (orderPhone) {
+      //   await updateCustomerTotals(orderPhone);
+      // }
+
+      // Update local state
+      const updatedOrders = orders.filter((o) => o.id !== orderId);
+      setOrders(updatedOrders);
+      
+      // Recalculate filtered orders based on current filter
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysAgo = getDaysAgo(filter);
+      const startOfSelectedDay = new Date(today);
+      startOfSelectedDay.setDate(today.getDate() - daysAgo);
+      const endOfSelectedDay = new Date(startOfSelectedDay);
+      endOfSelectedDay.setHours(23, 59, 59, 999);
+
+      const updatedFilteredOrders = updatedOrders.filter((order) => {
+        const orderDate = new Date(order.timestamp);
+        return (
+          orderDate >= startOfSelectedDay && orderDate <= endOfSelectedDay
+        );
+      });
+
+      setFilteredOrders(updatedFilteredOrders);
+      
+      // Recalculate totals
+      const newTotals = calculateTotals(updatedFilteredOrders);
+      setGrandTotal(newTotals);
+
+      toast.success("Order deleted successfully", toastOptions);
+    } catch (error) {
+      console.error("Error removing order:", error.message);
+      toast.error("Failed to delete order", toastOptions);
     }
-
-    // advanced feature is enabled → ask for confirmation
-    const confirmDelete = window.confirm(
-      "This will permanently delete the order. Are you sure?"
-    );
-    if (!confirmDelete) return; // user cancelled
-
-    // user confirmed → proceed with deletion
-    await removeOrder(orderId);
-
-    // update local state
-    const updatedOrders = orders.filter((o) => o.id !== orderId);
-    setOrders(updatedOrders);
-    setFilteredOrders((prev) => prev.filter((o) => o.id !== orderId));
-
-    console.log("Order removed successfully from both MongoDB and state");
-  } catch (error) {
-    console.error("Error removing order:", error.message);
-    // you could also show a toast / modal here
-  }
-};
+  };
 
   useEffect(() => {
     const getOrders = async () => {
-      setLoading(true); // Start loading
+      setLoading(true);
       try {
-        const data = await fetchOrders(); // Call the API function
-
+        const data = await fetchOrders();
         setOrders(data);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today at midnight
-
+        
         // Calculate start and end time for the selected day
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const daysAgo = getDaysAgo(filter);
         const startOfSelectedDay = new Date(today);
         startOfSelectedDay.setDate(today.getDate() - daysAgo);
-
         const endOfSelectedDay = new Date(startOfSelectedDay);
         endOfSelectedDay.setHours(23, 59, 59, 999);
 
@@ -91,17 +154,14 @@ const handleRemoveOrder = async (orderId) => {
         });
 
         setFilteredOrders(dayOrders);
-
-        // Calculate grand total for the day
-        const total = dayOrders.reduce(
-          (sum, order) => sum + order.totalAmount,
-          0
-        );
-        setGrandTotal(total);
+        
+        // Calculate totals
+        const totals = calculateTotals(dayOrders);
+        setGrandTotal(totals);
       } catch (error) {
         console.error("Error fetching orders:", error.message);
       } finally {
-        setLoading(false); // Stop loading
+        setLoading(false);
       }
     };
 
@@ -116,7 +176,7 @@ const handleRemoveOrder = async (orderId) => {
       case "Yesterday":
         return 1;
       default:
-        return parseInt(filterValue.split(" ")[0]); // Extract '2' from '2 days ago'
+        return parseInt(filterValue.split(" ")[0]);
     }
   };
 
@@ -145,36 +205,36 @@ const handleRemoveOrder = async (orderId) => {
   };
 
   const handleWhatsappClick = (order) => {
-    const customerPhoneNumber = order.phone; // Correct field to access phone number
-    const message = `We hope you had a delightful order experience with us. Your feedback is incredibly valuable as we continue to enhance our services. How did you enjoy your meal? We’d love to hear your thoughts.\nTeam: Foodies Hub`;
-    // Create the WhatsApp URL to send the message
-    const whatsappUrl = `https://wa.me/+91${customerPhoneNumber}?text=${encodeURIComponent(
-      message
-    )}`;
-
-    // Open WhatsApp with the message
+    const customerPhoneNumber = order.phone;
+    const message = `We hope you had a delightful order experience with us. Your feedback is incredibly valuable as we continue to enhance our services. How did you enjoy your meal? We'd love to hear your thoughts.\nTeam: Foodies Hub`;
+    const whatsappUrl = `https://wa.me/+91${customerPhoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
+  };
+
+  // Function to get the total amount for a specific day
+  const getTotalForDay = (daysAgo) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() - daysAgo);
+    
+    const dayOrders = orders.filter((order) => {
+      const orderDate = new Date(order.timestamp);
+      return (
+        orderDate.getDate() === targetDate.getDate() &&
+        orderDate.getMonth() === targetDate.getMonth() &&
+        orderDate.getFullYear() === targetDate.getFullYear()
+      );
+    });
+    
+    const totals = calculateTotals(dayOrders);
+    return totals.total;
   };
 
   return (
     <div>
+      <ToastContainer />
       <Header headerName="Order History" />
-      <div className="filter-container">
-        <select
-          id="filter"
-          value={filter}
-          onChange={handleFilterChange}
-          style={{ borderRadius: "1rem" }}
-        >
-          <option value="Today">Today</option>
-          <option value="Yesterday">Yesterday</option>
-          {[...Array(6)].map((_, i) => (
-            <option key={i} value={`${i + 2} days ago`}>
-              {i + 2} days ago
-            </option>
-          ))}
-        </select>
-      </div>
       {loading ? (
         <div className="lds-ripple">
           <div></div>
@@ -190,48 +250,20 @@ const handleRemoveOrder = async (orderId) => {
                 onChange={handleFilterChange}
                 style={{ borderRadius: "1rem" }}
               >
-                <option value="Today">
-                  Today ₹
-                  {orders
-                    .filter(
-                      (order) =>
-                        new Date(order.timestamp).toLocaleDateString() ===
-                        new Date().toLocaleDateString()
-                    )
-                    .reduce((sum, order) => sum + order.totalAmount, 0)}
-                </option>
-                <option value="Yesterday">
-                  Yesterday ₹
-                  {orders
-                    .filter((order) => {
-                      const orderDate = new Date(order.timestamp);
-                      const yesterday = new Date();
-                      yesterday.setDate(yesterday.getDate() - 1);
-                      return (
-                        orderDate.toLocaleDateString() ===
-                        yesterday.toLocaleDateString()
-                      );
-                    })
-                    .reduce((sum, order) => sum + order.totalAmount, 0)}
-                </option>
+                <option value="Today">Today ₹{getTotalForDay(0)}</option>
+                <option value="Yesterday">Yesterday ₹{getTotalForDay(1)}</option>
                 {[...Array(6)].map((_, i) => (
                   <option key={i} value={`${i + 2} days ago`}>
-                    {i + 2} days ago ₹
-                    {orders
-                      .filter((order) => {
-                        const orderDate = new Date(order.timestamp);
-                        const filterDate = new Date();
-                        filterDate.setDate(filterDate.getDate() - (i + 2));
-                        return (
-                          orderDate.toLocaleDateString() ===
-                          filterDate.toLocaleDateString()
-                        );
-                      })
-                      .reduce((sum, order) => sum + order.totalAmount, 0)}
+                    {i + 2} days ago ₹{getTotalForDay(i + 2)}
                   </option>
                 ))}
               </select>
             </h2>
+            <div className="paymentType">
+            <p>Cash: ₹{grandTotal.cash.toFixed(2)}</p>
+            <p>Credit: ₹{grandTotal.credit.toFixed(2)}</p>
+            </div>
+           
           </div>
 
           {filteredOrders.length > 0 ? (
@@ -244,7 +276,6 @@ const handleRemoveOrder = async (orderId) => {
                 onTouchStart={handlePressStart}
                 onTouchEnd={handlePressEnd}
               >
-                <hr />
                 <div
                   onClick={() => toggleOrder(order.id)}
                   className="order-lable"
@@ -261,25 +292,37 @@ const handleRemoveOrder = async (orderId) => {
                       flexWrap: "wrap",
                     }}
                   >
-                    <strong>Amount Received: ₹{order.totalAmount}</strong>{" "}
-                    {order.phone && (
-                      <FaWhatsapp
-                        className="whatsapp"
-                        onClick={() => handleWhatsappClick(order)}
-                      />
+                    <strong>Amount: ₹{order.totalAmount?.toFixed(2) || "0.00"}</strong>
+                    {order.saleType && (
+                      <span style={{
+                        position: "absolute",
+                        right: "2rem",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        backgroundColor: order.saleType === "cash" ? "#4CAF50" : 
+                                        order.saleType === "credit" ? "#FF9800" : "#2196F3",
+                        color: "white"
+                      }} className="saletypedaywise">
+                        {order.saleType.toUpperCase()}
+                      </span>
                     )}
+                  
                   </div>
                   {showRemoveBtn && (
                     <button
                       className="deletebtn"
-                      onClick={() => handleRemoveOrder(order.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveOrder(order.id, order.phone);
+                      }}
                     >
                       <MdDelete />
                     </button>
                   )}
                 </div>
 
-                {expandedOrderId === order.id && ( // Render table only if this order is expanded
+                {expandedOrderId === order.id && (
                   <table className="products-table">
                     <thead>
                       <tr>
@@ -290,16 +333,16 @@ const handleRemoveOrder = async (orderId) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {order.products.map((product, idx) => (
+                      {order.products?.map((product, idx) => (
                         <tr key={idx}>
                           <td>
                             {product.size
                               ? `${product.name} (${product.size})`
                               : product.name}
                           </td>
-                          <td style={{textAlign: "right"}}>{product.price}</td>
-                          <td style={{textAlign: "center"}}>{product.quantity}</td>
-                          <td style={{textAlign: "right"}}>{product.price * product.quantity}</td>
+                          <td style={{textAlign: "right"}}>₹{product.price || 0}</td>
+                          <td style={{textAlign: "center"}}>{product.quantity || 1}</td>
+                          <td style={{textAlign: "right"}}>₹{((product.price || 0) * (product.quantity || 1))}</td>
                         </tr>
                       ))}
 
@@ -312,7 +355,7 @@ const handleRemoveOrder = async (orderId) => {
                           <td></td>
                           <td></td>
                           <td style={{textAlign: "right"}}>
-                            <strong>+{order.delivery}</strong>
+                            <strong>+₹{order.delivery || 0}</strong>
                           </td>
                         </tr>
                       )}
@@ -326,9 +369,49 @@ const handleRemoveOrder = async (orderId) => {
                           <td></td>
                           <td></td>
                           <td style={{textAlign: "right"}}>
-                            <strong>-{order.discount}</strong>
+                            <strong>-₹{order.discount || 0}</strong>
                           </td>
                         </tr>
+                      )}
+
+                        {/* GST ROW */}
+                      {order.gstAmount > 0 && (
+                        <tr>
+                          <td>
+                            <strong>gstAmount</strong>
+                          </td>
+                          <td></td>
+                          <td></td>
+                          <td style={{textAlign: "right"}}>
+                            <strong>+₹{order.gstAmount || 0}</strong>
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Payment details for partial payments */}
+                      {order.saleType === "partial" && (
+                        <>
+                          <tr>
+                            <td>
+                              <strong>Paid Amount</strong>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td style={{textAlign: "right"}}>
+                              <strong>₹{order.paidAmount || 0}</strong>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>Credit Amount</strong>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td style={{textAlign: "right"}}>
+                              <strong>₹{order.creditAmount || 0}</strong>
+                            </td>
+                          </tr>
+                        </>
                       )}
 
                       {/* ICONS ROW */}
@@ -337,6 +420,7 @@ const handleRemoveOrder = async (orderId) => {
                           <RawBTPrintButton
                             productsToSend={order.products}
                             customerPhone={order.phone}
+                            customerName={order.name}
                             deliveryChargeAmount={order.delivery}
                             parsedDiscount={order.discount}
                             timestamp={order.timestamp}
@@ -349,8 +433,7 @@ const handleRemoveOrder = async (orderId) => {
                                   textAlign: "center"
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform =
-                                    "scale(1.2)")
+                                  (e.currentTarget.style.transform = "scale(1.2)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
@@ -358,30 +441,6 @@ const handleRemoveOrder = async (orderId) => {
                               />
                             )}
                           />
-                            {/* <Rawbt3Inch
-                            productsToSend={order.products}
-                            customerPhone={order.phone}
-                            deliveryChargeAmount={order.delivery}
-                            parsedDiscount={order.discount}
-                            timestamp={order.timestamp}
-                            icon={() => (
-                              <FaPrint
-                                size={32}
-                                style={{
-                                  color: "#1abc9c",
-                                  transition: "transform 0.1s ease",
-                                  textAlign: "center"
-                                }}
-                                onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform =
-                                    "scale(1.2)")
-                                }
-                                onMouseLeave={(e) =>
-                                  (e.currentTarget.style.transform = "scale(1)")
-                                }
-                              />
-                            )}
-                          /> */}
                         </td>
                       </tr>
                     </tbody>
@@ -404,7 +463,7 @@ const handleRemoveOrder = async (orderId) => {
                 className="custom-modal-button confirm-button-history"
                 onClick={() => setIsModalOpen(false)}
               >
-                ok
+                OK
               </button>
             </div>
           </div>

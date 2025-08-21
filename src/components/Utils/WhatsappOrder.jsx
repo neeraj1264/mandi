@@ -1,15 +1,4 @@
 import React from "react";
-
-/**
- * Props expected:
- * - productsToSend: Array of { name, price, quantity, size }
- * - deliveryChargeAmount: number
- * - deliveryCharge: string or number
- * - parsedDiscount: number
- * - customerPhone: string
- * - customerAddress: string
- * - restaurantName: string
- */
 export default function WhatsAppButton({
   productsToSend,
   deliveryChargeAmount,
@@ -18,6 +7,8 @@ export default function WhatsAppButton({
   customerPhone,
   customerAddress,
   restaurantName,
+  totalCustomerCredit,
+  gstAmount,
 }) {
   // Helper to calculate total price of items
   const calculateTotalPrice = (items = []) =>
@@ -27,6 +18,7 @@ export default function WhatsAppButton({
     // Compute current total
     const currentTotal =
       calculateTotalPrice(productsToSend) +
+      gstAmount +
       deliveryChargeAmount -
       parsedDiscount;
 
@@ -48,6 +40,9 @@ export default function WhatsAppButton({
     const discountText = parsedDiscount
       ? `Discount: -₹${parsedDiscount}`
       : "";
+     const gstAmountText = gstAmount
+      ? `GST: (2%) ₹${gstAmount}` 
+      : "";
 
     // Order ID
     const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -59,9 +54,11 @@ export default function WhatsAppButton({
         (customerPhone ? `\nPhone: *${customerPhone}*` : "") +
         (customerAddress ? `\nAddress: *${customerAddress}*` : "") +
         `\nAmount: *₹${currentTotal}*` +
+        (totalCustomerCredit ? `\nBalance: *₹${totalCustomerCredit}*` : "") +
         `\n\n----------item----------\n${productDetails}` +
         (serviceText ? `\n${serviceText}` : "") +
-        (discountText ? `\n${discountText}` : "")
+        (discountText ? `\n${discountText}` : "") +
+        (gstAmountText ? `\n${gstAmountText}`: "")
     );
 
     if (!customerPhone) {

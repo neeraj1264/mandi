@@ -27,6 +27,16 @@
   display: flex;
 }
 
+.SaleType {
+  width: 90vw;
+  margin: 0.5rem;
+  padding: 0.5rem;
+  box-sizing: border-box; 
+  border-radius: 1rem;
+  display: flex;
+  border: 2px solid;
+}
+
 .done {
   position: fixed;
   bottom: 1rem;
@@ -58,6 +68,8 @@
   font-size: 20px;
   font-weight: bold;
   text-align: left;
+  display: flex;
+  justify-content: space-between;
 }
 .total p {
   margin: 0.5rem 0 0 0;
