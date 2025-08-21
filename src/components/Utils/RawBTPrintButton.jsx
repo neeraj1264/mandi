@@ -82,7 +82,7 @@ export default function RawBTPrintButton({
       .join("\n");
 
     // Add a border for the header
-    const header = ` No    Item Name     Qty  price `;
+    const header = ` No Item Name       Qty  price `;
     const separator = `+${"-".repeat(nameWidth + 2)}+${"-".repeat(
       priceWidth + 2
     )}+${"-".repeat(quantityWidth + 2)}+`;
@@ -137,19 +137,19 @@ export default function RawBTPrintButton({
 
     // Add delivery charge and discount only if they exist
     if (hasDeliveryCharge || hasDiscount || hasgstAmount) {
-      invoiceText += `           Item Total:  ${totalprice}\n`;
+      invoiceText += `             Item Total:  ${totalprice}\n`;
     }
     if (hasDeliveryCharge) {
-      invoiceText += `      Delivery Charge: +${delivery}\n`;
+      invoiceText += `        Delivery Charge: +${delivery}\n`;
     }
     if (hasDiscount) {
-      invoiceText += `             Discount: -${DiscountAmount}\n`;
+      invoiceText += `               Discount: -${DiscountAmount}\n`;
     }
     if (hasgstAmount) {
-      invoiceText += `             GST: (2%) +${gstAmount}\n${dash}\n`
+      invoiceText += `               GST: (2%) +  ${gstAmount}\n${dash}\n`
     }
 
-invoiceText += `\x1B\x21\x30\x1B\x34Total: Rs ${
+invoiceText += `\x1B\x21\x30\x1B\x34Total: ${
       calculateTotalPrice(productsToSend) + deliveryChargeAmount + gstAmount - parsedDiscount
     }/-\x1B\x21\x00\x1B\x35\n`;
 

@@ -54,7 +54,7 @@ const History = () => {
 
     ordersArray.forEach((order) => {
       total += order.totalAmount || 0;
-      
+
       if (order.saleType === "cash") {
         cashTotal += order.totalAmount || 0;
       } else if (order.saleType === "credit") {
@@ -75,7 +75,8 @@ const History = () => {
 
   const handleRemoveOrder = async (orderId, orderPhone) => {
     try {
-      const advanceFeatured = localStorage.getItem("advancedFeature") === "true";
+      const advanceFeatured =
+        localStorage.getItem("advancedFeature") === "true";
 
       if (!advanceFeatured) {
         setModalMessage("Advance feature not granted.");
@@ -99,7 +100,7 @@ const History = () => {
       // Update local state
       const updatedOrders = orders.filter((o) => o.id !== orderId);
       setOrders(updatedOrders);
-      
+
       // Recalculate filtered orders based on current filter
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -111,13 +112,11 @@ const History = () => {
 
       const updatedFilteredOrders = updatedOrders.filter((order) => {
         const orderDate = new Date(order.timestamp);
-        return (
-          orderDate >= startOfSelectedDay && orderDate <= endOfSelectedDay
-        );
+        return orderDate >= startOfSelectedDay && orderDate <= endOfSelectedDay;
       });
 
       setFilteredOrders(updatedFilteredOrders);
-      
+
       // Recalculate totals
       const newTotals = calculateTotals(updatedFilteredOrders);
       setGrandTotal(newTotals);
@@ -135,7 +134,8 @@ const History = () => {
       try {
         const data = await fetchOrders();
         setOrders(data);
-        
+        console.log("fetching order ", data)
+
         // Calculate start and end time for the selected day
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -154,7 +154,7 @@ const History = () => {
         });
 
         setFilteredOrders(dayOrders);
-        
+
         // Calculate totals
         const totals = calculateTotals(dayOrders);
         setGrandTotal(totals);
@@ -207,7 +207,9 @@ const History = () => {
   const handleWhatsappClick = (order) => {
     const customerPhoneNumber = order.phone;
     const message = `We hope you had a delightful order experience with us. Your feedback is incredibly valuable as we continue to enhance our services. How did you enjoy your meal? We'd love to hear your thoughts.\nTeam: Foodies Hub`;
-    const whatsappUrl = `https://wa.me/+91${customerPhoneNumber}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/+91${customerPhoneNumber}?text=${encodeURIComponent(
+      message
+    )}`;
     window.open(whatsappUrl, "_blank");
   };
 
@@ -217,7 +219,7 @@ const History = () => {
     today.setHours(0, 0, 0, 0);
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() - daysAgo);
-    
+
     const dayOrders = orders.filter((order) => {
       const orderDate = new Date(order.timestamp);
       return (
@@ -226,7 +228,7 @@ const History = () => {
         orderDate.getFullYear() === targetDate.getFullYear()
       );
     });
-    
+
     const totals = calculateTotals(dayOrders);
     return totals.total;
   };
@@ -251,7 +253,9 @@ const History = () => {
                 style={{ borderRadius: "1rem" }}
               >
                 <option value="Today">Today ₹{getTotalForDay(0)}</option>
-                <option value="Yesterday">Yesterday ₹{getTotalForDay(1)}</option>
+                <option value="Yesterday">
+                  Yesterday ₹{getTotalForDay(1)}
+                </option>
                 {[...Array(6)].map((_, i) => (
                   <option key={i} value={`${i + 2} days ago`}>
                     {i + 2} days ago ₹{getTotalForDay(i + 2)}
@@ -260,10 +264,9 @@ const History = () => {
               </select>
             </h2>
             <div className="paymentType">
-            <p>Cash: ₹{grandTotal.cash.toFixed(2)}</p>
-            <p>Credit: ₹{grandTotal.credit.toFixed(2)}</p>
+              <p>Cash: ₹{grandTotal.cash.toFixed(2)}</p>
+              <p>Credit: ₹{grandTotal.credit.toFixed(2)}</p>
             </div>
-           
           </div>
 
           {filteredOrders.length > 0 ? (
@@ -292,22 +295,30 @@ const History = () => {
                       flexWrap: "wrap",
                     }}
                   >
-                    <strong>Amount: ₹{order.totalAmount?.toFixed(2) || "0.00"}</strong>
+                    <strong>
+                      Amount: ₹{order.totalAmount?.toFixed(2) || "0.00"}
+                    </strong>
                     {order.saleType && (
-                      <span style={{
-                        position: "absolute",
-                        right: "2rem",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        backgroundColor: order.saleType === "cash" ? "#4CAF50" : 
-                                        order.saleType === "credit" ? "#FF9800" : "#2196F3",
-                        color: "white"
-                      }} className="saletypedaywise">
+                      <span
+                        style={{
+                          position: "absolute",
+                          right: "2rem",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                          backgroundColor:
+                            order.saleType === "cash"
+                              ? "#4CAF50"
+                              : order.saleType === "credit"
+                              ? "#FF9800"
+                              : "#2196F3",
+                          color: "white",
+                        }}
+                        className="saletypedaywise"
+                      >
                         {order.saleType.toUpperCase()}
                       </span>
                     )}
-                  
                   </div>
                   {showRemoveBtn && (
                     <button
@@ -340,21 +351,25 @@ const History = () => {
                               ? `${product.name} (${product.size})`
                               : product.name}
                           </td>
-                          <td style={{textAlign: "right"}}>₹{product.price || 0}</td>
-                          <td style={{textAlign: "center"}}>{product.quantity || 1}</td>
-                          <td style={{textAlign: "right"}}>₹{((product.price || 0) * (product.quantity || 1))}</td>
+                          <td style={{ textAlign: "right" }}>
+                            ₹{product.price || 0}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {product.quantity || 1}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            ₹{(product.price || 0) * (product.quantity || 1)}
+                          </td>
                         </tr>
                       ))}
 
                       {/* DELIVERY ROW */}
                       {order.delivery > 0 && (
                         <tr>
-                          <td>
-                            <strong>Delivery Charge</strong>
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>Delivery</strong>
                           </td>
-                          <td></td>
-                          <td></td>
-                          <td style={{textAlign: "right"}}>
+                          <td colSpan={2} style={{ textAlign: "right" }}>
                             <strong>+₹{order.delivery || 0}</strong>
                           </td>
                         </tr>
@@ -363,26 +378,24 @@ const History = () => {
                       {/* DISCOUNT ROW */}
                       {order.discount > 0 && (
                         <tr>
-                          <td>
+                          <td colSpan={2} style={{ textAlign: "right" }}>
                             <strong>Discount</strong>
                           </td>
-                          <td></td>
-                          <td></td>
-                          <td style={{textAlign: "right"}}>
+
+                          <td colSpan={2} style={{ textAlign: "right" }}>
                             <strong>-₹{order.discount || 0}</strong>
                           </td>
                         </tr>
                       )}
 
-                        {/* GST ROW */}
+                      {/* GST ROW */}
                       {order.gstAmount > 0 && (
                         <tr>
-                          <td>
-                            <strong>gstAmount</strong>
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>GST (2%)</strong>
                           </td>
-                          <td></td>
-                          <td></td>
-                          <td style={{textAlign: "right"}}>
+
+                          <td colSpan={2} style={{ textAlign: "right" }}>
                             <strong>+₹{order.gstAmount || 0}</strong>
                           </td>
                         </tr>
@@ -397,7 +410,7 @@ const History = () => {
                             </td>
                             <td></td>
                             <td></td>
-                            <td style={{textAlign: "right"}}>
+                            <td style={{ textAlign: "right" }}>
                               <strong>₹{order.paidAmount || 0}</strong>
                             </td>
                           </tr>
@@ -407,7 +420,7 @@ const History = () => {
                             </td>
                             <td></td>
                             <td></td>
-                            <td style={{textAlign: "right"}}>
+                            <td style={{ textAlign: "right" }}>
                               <strong>₹{order.creditAmount || 0}</strong>
                             </td>
                           </tr>
@@ -424,16 +437,18 @@ const History = () => {
                             deliveryChargeAmount={order.delivery}
                             parsedDiscount={order.discount}
                             timestamp={order.timestamp}
+                            gstAmount={order.gstAmount}
                             icon={() => (
                               <FaPrint
                                 size={32}
                                 style={{
                                   color: "#1abc9c",
                                   transition: "transform 0.1s ease",
-                                  textAlign: "center"
+                                  textAlign: "center",
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform = "scale(1.2)")
+                                  (e.currentTarget.style.transform =
+                                    "scale(1.2)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")

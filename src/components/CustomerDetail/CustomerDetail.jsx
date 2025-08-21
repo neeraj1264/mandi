@@ -17,6 +17,7 @@ import "react-toastify/dist/ReactToastify.css";
 import WhatsAppButton from "../Utils/WhatsappOrder";
 import RawBTPrintButton from "../Utils/RawBTPrintButton";
 import SmsOrder from "../Utils/SmsOrder";
+import { handleScreenshotAsPDF } from "../Utils/DownloadPdf";
 
 const toastOptions = {
   position: "bottom-right",
@@ -46,7 +47,7 @@ const calculateOrderTotals = (products, delivery, discount, applyGst) => {
 
   let finalTotal = itemsTotal + deliveryAmount - discountAmount;
 
-   // Calculate GST if applicable
+  // Calculate GST if applicable
   let gstAmount = 0;
   if (applyGst) {
     gstAmount = parseFloat((finalTotal * 0.02).toFixed(2));
@@ -78,11 +79,10 @@ const CustomerDetail = () => {
   const [nameSuggestions, setNameSuggestions] = useState([]);
   const [totalCustomerCredit, setTotalCustomerCredit] = useState(0);
   const [applyGst, setApplyGst] = useState(false); // GST toggle state
+  const isValidPhone = (phone) => /^\d{10}$/.test(phone);
+  const isValidGmail = (email) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email);
   const invoiceRef = useRef();
   const navigate = useNavigate();
-
-  const RestorentName = localStorage.getItem("RestorentName");
-
   const [saleType, setSaleType] = useState("");
   const [paidAmount, setPaidAmount] = useState("");
 
@@ -118,7 +118,7 @@ const CustomerDetail = () => {
 
   // Update suggestions based on current phone input
   useEffect(() => {
-    if (customerPhone.trim().length === 10) {
+    if (customerPhone.length >= 10) {
       setPhoneSuggestions([]);
     } else if (customerPhone.trim() !== "") {
       const suggestions = savedCustomers.filter((customer) =>
@@ -186,10 +186,6 @@ const CustomerDetail = () => {
     setPhoneSuggestions([]);
   };
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const handleSendClick = async () => {
     if (!saleType) {
       toast.error("Please select a sale type before proceeding", toastOptions);
@@ -200,7 +196,7 @@ const CustomerDetail = () => {
       productsToSend,
       deliveryCharge,
       discount,
-      applyGst,
+      applyGst
     );
     const finalTotal = totals.finalTotal;
 
@@ -339,10 +335,13 @@ const CustomerDetail = () => {
     window.location.reload();
   };
 
-  const handlePngDownload = () => {
+  const handlePdfDownload = () => {
+    if (!invoiceRef.current) return;
     invoiceRef.current.style.display = "block";
+    // small delay so DOM and styles render
     setTimeout(() => {
-      handleScreenshot("mobileinvoice");
+      handleScreenshotAsPDF("mobileinvoice");
+      // hide after kicking off PDF generation
       invoiceRef.current.style.display = "none";
     }, 10);
   };
@@ -422,8 +421,48 @@ const CustomerDetail = () => {
     }
   };
 
+  const handlePhoneChange = (e) => {
+    // allow only digits, trim to max 10
+    let v = (e.target.value || "").replace(/\D/g, "");
+    if (v.length > 10) v = v.slice(0, 10);
+    setCustomerPhone(v);
+
+    // stop suggestions when exactly 10 digits
+    if (v.length === 10) {
+      setPhoneSuggestions([]);
+    } else if (v.length > 0) {
+      // update suggestions live (optional, mirrors useEffect)
+      const suggestions = savedCustomers.filter((customer) =>
+        String(customer.phone).startsWith(v)
+      );
+      setPhoneSuggestions(suggestions);
+    } else {
+      setPhoneSuggestions([]);
+    }
+  };
+
+  const handlePhonePaste = (e) => {
+    // sanitize pasted content to only digits and max 10
+    e.preventDefault();
+    const paste =
+      (e.clipboardData || window.clipboardData).getData("text") || "";
+    const cleaned = paste.replace(/\D/g, "").slice(0, 10);
+    setCustomerPhone(cleaned);
+    if (cleaned.length === 10) setPhoneSuggestions([]);
+  };
+
+  const handleEmailChange = (e) => {
+    const v = e.target.value || "";
+    setCustomerEmail(v);
+  };
+
   // Calculate totals for UI display
-  const totals = calculateOrderTotals(productsToSend, deliveryCharge, discount, applyGst);
+  const totals = calculateOrderTotals(
+    productsToSend,
+    deliveryCharge,
+    discount,
+    applyGst
+  );
   const deliveryChargeAmount = totals.deliveryAmount;
   const parsedDiscount = totals.discountAmount;
   const gstAmount = totals.gstAmount;
@@ -474,9 +513,13 @@ const CustomerDetail = () => {
       </div>
       <div className="cust-inputs">
         <input
-          type="text"
+          type="tel"
+          inputMode="numeric"
+          pattern="\d*"
+          maxLength={10}
           value={customerPhone}
-          onChange={(e) => setCustomerPhone(e.target.value)}
+          onChange={handlePhoneChange}
+          onPaste={handlePhonePaste}
           placeholder="Customer phone..."
         />
       </div>
@@ -523,7 +566,7 @@ const CustomerDetail = () => {
         <input
           type="email"
           value={customerEmail}
-          onChange={(e) => setCustomerEmail(e.target.value)}
+          onChange={handleEmailChange}
           placeholder="Customer email..."
         />
       </div>
@@ -544,75 +587,89 @@ const CustomerDetail = () => {
         />
       </div>
 
-{/* GST Toggle */}
-    {/* GST Toggle - Improved UI */}
-<div className="cust-inputs">
-  <div style={{
-    display: "flex", 
-    alignItems: "center", 
-    justifyContent: "space-between",
-    padding: "12px 16px",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "1rem",
-    border: "2px solid black",
-    margin: "8px auto 16px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-    width: "90%",
-  }}>
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <span style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "24px",
-        height: "24px",
-        borderRadius: "4px",
-        border: "2px solid #4CAF50",
-        marginRight: "12px",
-        backgroundColor: applyGst ? "#4CAF50" : "white",
-        transition: "all 0.2s ease"
-      }}>
-        {applyGst && (
-          <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
-            <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-      </span>
-      <span style={{ 
-        fontWeight: "500", 
-        color: "#333",
-        fontSize: "16px"
-      }}>
-        Apply 2% GST
-      </span>
-    </div>
-    
-    <div 
-      onClick={() => setApplyGst(!applyGst)}
-      style={{
-        width: "48px",
-        height: "24px",
-        borderRadius: "12px",
-        backgroundColor: applyGst ? "#4CAF50" : "#ccc",
-        position: "relative",
-        cursor: "pointer",
-        transition: "all 0.3s ease"
-      }}
-    >
-      <div style={{
-        position: "absolute",
-        top: "2px",
-        left: applyGst ? "26px" : "2px",
-        width: "20px",
-        height: "20px",
-        borderRadius: "50%",
-        backgroundColor: "white",
-        transition: "all 0.3s ease",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-      }} />
-    </div>
-  </div>
-</div>
+      {/* GST Toggle */}
+      {/* GST Toggle - Improved UI */}
+      <div className="cust-inputs">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 16px",
+            backgroundColor: "#f8f9fa",
+            borderRadius: "1rem",
+            border: "2px solid black",
+            margin: "8px auto 16px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            width: "90%",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "24px",
+                height: "24px",
+                borderRadius: "4px",
+                border: "2px solid #4CAF50",
+                marginRight: "12px",
+                backgroundColor: applyGst ? "#4CAF50" : "white",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {applyGst && (
+                <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+                  <path
+                    d="M1 5L5 9L13 1"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </span>
+            <span
+              style={{
+                fontWeight: "500",
+                color: "#333",
+                fontSize: "16px",
+              }}
+            >
+              Apply 2% GST
+            </span>
+          </div>
+
+          <div
+            onClick={() => setApplyGst(!applyGst)}
+            style={{
+              width: "48px",
+              height: "24px",
+              borderRadius: "12px",
+              backgroundColor: applyGst ? "#4CAF50" : "#ccc",
+              position: "relative",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: "2px",
+                left: applyGst ? "26px" : "2px",
+                width: "20px",
+                height: "20px",
+                borderRadius: "50%",
+                backgroundColor: "white",
+                transition: "all 0.3s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              }}
+            />
+          </div>
+        </div>
+      </div>
 
       <div style={{ marginBottom: "8rem" }}>
         <div className="cust-inputs">
@@ -675,7 +732,7 @@ const CustomerDetail = () => {
         >
           (Fruits & Vegetables Dealers)
         </p>
-         <p
+        <p
           style={{
             textAlign: "center",
             margin: 0,
@@ -685,7 +742,7 @@ const CustomerDetail = () => {
         >
           Opp. Telephone Exchange,
         </p>
-         <p
+        <p
           style={{
             textAlign: "center",
             margin: 0,
@@ -696,7 +753,7 @@ const CustomerDetail = () => {
           Guru Har Sahai (Fzr.)
         </p>
         <p style={{ textAlign: "center", margin: 0, fontSize: "14px" }}>
-          9815832778  7087432778 <br /> 9517543243  9858300043
+          9815832778 7087432778 <br /> 9517543243 9858300043
         </p>
         <hr />
         <h2 style={{ textAlign: "center", margin: 0, fontSize: "20px" }}>
@@ -821,7 +878,7 @@ const CustomerDetail = () => {
             paddingBottom: ".5rem",
           }}
         >
-          Powered&nbsp;By&nbsp;Billzo&nbsp;||&nbsp;7015823645
+          Powered&nbsp;By&nbsp;Billzo&nbsp;&nbsp;||&nbsp;7015823645
         </div>
         <hr />
       </div>
@@ -840,10 +897,9 @@ const CustomerDetail = () => {
               customerPhone={customerPhone}
               customerName={customerName}
               customerAddress={customerAddress}
-              restaurantName={RestorentName}
               totalCustomerCredit={totalCustomerCredit}
               gstAmount={gstAmount}
-               applyGst={applyGst}
+              applyGst={applyGst}
             />
             <SmsOrder
               productsToSend={productsToSend}
@@ -852,13 +908,12 @@ const CustomerDetail = () => {
               customerPhone={customerPhone}
               customerName={customerName}
               customerAddress={customerAddress}
-              restaurantName={RestorentName}
               totalCustomerCredit={totalCustomerCredit}
               gstAmount={gstAmount}
-               applyGst={applyGst}
+              applyGst={applyGst}
             />
-            <button onClick={handlePngDownload} className="popupButton">
-              Download Invoice
+            <button onClick={handlePdfDownload} className="popupButton">
+              Download PDF
             </button>
             <RawBTPrintButton
               productsToSend={productsToSend}
@@ -869,11 +924,11 @@ const CustomerDetail = () => {
               customerAddress={customerAddress}
               totalCustomerCredit={totalCustomerCredit}
               gstAmount={gstAmount}
-               applyGst={applyGst}
+              applyGst={applyGst}
             />
-            <button onClick={MobilePrint} className="popupButton">
+            {/* <button onClick={MobilePrint} className="popupButton">
               Usb Print
-            </button>
+            </button> */}
 
             <button onClick={handleClosePopup} className="popupCloseButton">
               Cancel

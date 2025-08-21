@@ -153,7 +153,7 @@ const Header = ({ headerName, setSearch, onClick }) => {
                 }
                 to="/customer-data"
               >
-                Data
+                Customer Ledger
               </NavLink>
             </li>
             <li className="nav-item">
@@ -168,22 +168,22 @@ const Header = ({ headerName, setSearch, onClick }) => {
                 Setting
               </NavLink>
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <button
                 className="nav-link custom-text"
                 onClick={toggleTheme}
               >
                 {isDarkMode ? "Light Mode" : "Dark Mode"}
               </button>
-            </li>
-            <li className="nav-item">
+            </li> */}
+            {/* <li className="nav-item">
               <button
                 className="nav-link custom-text"
                 onClick={() => setIsLogoutModalOpen(true)}
               >
                 Logout
               </button>
-            </li>
+            </li> */}
           </ul>
         </div>
       </div>
