@@ -35,8 +35,8 @@ const parseNumber = (value) => {
 };
 
 // Consistent calculation function
-const calculateOrderTotals = (products, delivery, discount, applyGst) => {
-  const itemsTotal = products.reduce(
+const calculateOrderTotals = (products, delivery, discount, applyGst, applyComission) => {
+  let itemsTotal = products.reduce(
     (sum, product) =>
       sum + parseNumber(product.price) * parseNumber(product.quantity || 1),
     0
@@ -50,8 +50,15 @@ const calculateOrderTotals = (products, delivery, discount, applyGst) => {
   // Calculate GST if applicable
   let gstAmount = 0;
   if (applyGst) {
-    gstAmount = parseFloat((finalTotal * 0.02).toFixed(2));
+    gstAmount = parseFloat((itemsTotal * 0.02).toFixed(2));
     finalTotal += gstAmount;
+  }
+
+    // Calculate GST if applicable
+  let ComissionAmount = 0;
+  if (applyComission) {
+    ComissionAmount = parseFloat((itemsTotal * 0.05).toFixed(2));
+    finalTotal += ComissionAmount;
   }
 
   return {
@@ -59,6 +66,7 @@ const calculateOrderTotals = (products, delivery, discount, applyGst) => {
     deliveryAmount: parseFloat(deliveryAmount.toFixed(2)),
     discountAmount: parseFloat(discountAmount.toFixed(2)),
     gstAmount: gstAmount,
+    ComissionAmount: ComissionAmount,
     finalTotal: parseFloat(finalTotal.toFixed(2)),
   };
 };
@@ -79,6 +87,7 @@ const CustomerDetail = () => {
   const [nameSuggestions, setNameSuggestions] = useState([]);
   const [totalCustomerCredit, setTotalCustomerCredit] = useState(0);
   const [applyGst, setApplyGst] = useState(false); // GST toggle state
+  const [applyComission, setApplyComission] = useState(false); // GST toggle state
   const isValidPhone = (phone) => /^\d{10}$/.test(phone);
   const isValidGmail = (email) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email);
   const invoiceRef = useRef();
@@ -196,7 +205,8 @@ const CustomerDetail = () => {
       productsToSend,
       deliveryCharge,
       discount,
-      applyGst
+      applyGst,
+      applyComission
     );
     const finalTotal = totals.finalTotal;
 
@@ -263,6 +273,8 @@ const CustomerDetail = () => {
       saleType,
       gstApplied: applyGst,
       gstAmount: gstAmount,
+      ComissionApplied: applyComission,
+      ComissionAmount: ComissionAmount,
       paidAmount: resolvedPaid,
       creditAmount: resolvedCredit,
     };
@@ -461,11 +473,13 @@ const CustomerDetail = () => {
     productsToSend,
     deliveryCharge,
     discount,
-    applyGst
+    applyGst,
+    applyComission
   );
   const deliveryChargeAmount = totals.deliveryAmount;
   const parsedDiscount = totals.discountAmount;
   const gstAmount = totals.gstAmount;
+  const ComissionAmount = totals.ComissionAmount;
   const finalTotal = totals.finalTotal;
 
   return (
@@ -588,7 +602,6 @@ const CustomerDetail = () => {
       </div>
 
       {/* GST Toggle */}
-      {/* GST Toggle - Improved UI */}
       <div className="cust-inputs">
         <div
           style={{
@@ -659,6 +672,89 @@ const CustomerDetail = () => {
                 position: "absolute",
                 top: "2px",
                 left: applyGst ? "26px" : "2px",
+                width: "20px",
+                height: "20px",
+                borderRadius: "50%",
+                backgroundColor: "white",
+                transition: "all 0.3s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+ {/* Comission Toggle */}
+      <div className="cust-inputs">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 16px",
+            backgroundColor: "#f8f9fa",
+            borderRadius: "1rem",
+            border: "2px solid black",
+            margin: "8px auto 16px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            width: "90%",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "24px",
+                height: "24px",
+                borderRadius: "4px",
+                border: "2px solid #4CAF50",
+                marginRight: "12px",
+                backgroundColor:  applyComission ? "#4CAF50" : "white",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {applyComission && (
+                <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+                  <path
+                    d="M1 5L5 9L13 1"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </span>
+            <span
+              style={{
+                fontWeight: "500",
+                color: "#333",
+                fontSize: "16px",
+              }}
+            >
+              Apply 5% Comission
+            </span>
+          </div>
+
+          <div
+            onClick={() => setApplyComission(!applyComission)}
+            style={{
+              width: "48px",
+              height: "24px",
+              borderRadius: "12px",
+              backgroundColor: applyComission ? "#4CAF50" : "#ccc",
+              position: "relative",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: "2px",
+                left: applyComission ? "26px" : "2px",
                 width: "20px",
                 height: "20px",
                 borderRadius: "50%",
@@ -817,13 +913,24 @@ const CustomerDetail = () => {
             ))}
           </tbody>
         </table>
-        {(deliveryChargeAmount !== 0 || parsedDiscount !== 0 || applyGst) && (
+        {(deliveryChargeAmount !== 0 || parsedDiscount !== 0 || applyGst || applyComission) && (
           <>
             <div className="total">
               <p style={{ margin: "0" }}>Item Total</p>
               <p style={{ margin: "0" }}>{totals.itemsTotal.toFixed(2)}</p>
             </div>
-
+            {applyGst && (
+              <div className="total">
+                <p style={{ margin: "0" }}>APMC (2%):</p>
+                <p style={{ margin: "0" }}>+{gstAmount.toFixed(2)}</p>
+              </div>
+            )}
+            {applyComission && (
+              <div className="total">
+                <p style={{ margin: "0" }}>Comission (5%):</p>
+                <p style={{ margin: "0" }}>+{ComissionAmount.toFixed(2)}</p>
+              </div>
+            )}
             {deliveryChargeAmount !== 0 && (
               <div className="total">
                 <p style={{ margin: "0" }}>Service Charge:</p>
@@ -832,17 +939,10 @@ const CustomerDetail = () => {
                 </p>
               </div>
             )}
-
             {parsedDiscount !== 0 && (
               <div className="total">
                 <p style={{ margin: "0" }}>Discount:</p>
                 <p style={{ margin: "0" }}>-{parsedDiscount.toFixed(2)}</p>
-              </div>
-            )}
-            {applyGst && (
-              <div className="total">
-                <p style={{ margin: "0" }}>APMC (2%):</p>
-                <p style={{ margin: "0" }}>+{gstAmount.toFixed(2)}</p>
               </div>
             )}
           </>
@@ -900,6 +1000,8 @@ const CustomerDetail = () => {
               totalCustomerCredit={totalCustomerCredit}
               gstAmount={gstAmount}
               applyGst={applyGst}
+              ComissionAmount={ComissionAmount}
+              applyComission={applyComission}
             />
             <SmsOrder
               productsToSend={productsToSend}
@@ -911,6 +1013,8 @@ const CustomerDetail = () => {
               totalCustomerCredit={totalCustomerCredit}
               gstAmount={gstAmount}
               applyGst={applyGst}
+              ComissionAmount={ComissionAmount}
+              applyComission={applyComission}
             />
             <button onClick={handlePdfDownload} className="popupButton">
               Download PDF
@@ -925,10 +1029,12 @@ const CustomerDetail = () => {
               totalCustomerCredit={totalCustomerCredit}
               gstAmount={gstAmount}
               applyGst={applyGst}
+              ComissionAmount={ComissionAmount}
+              applyComission={applyComission}
             />
-            {/* <button onClick={MobilePrint} className="popupButton">
+            <button onClick={MobilePrint} className="popupButton">
               Usb Print
-            </button> */}
+            </button>
 
             <button onClick={handleClosePopup} className="popupCloseButton">
               Cancel

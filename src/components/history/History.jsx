@@ -363,6 +363,32 @@ const History = () => {
                         </tr>
                       ))}
 
+
+                      {/* GST ROW */}
+                      {order.gstAmount > 0 && (
+                        <tr>
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>APMC (2%)</strong>
+                          </td>
+
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>+₹{order.gstAmount || 0}</strong>
+                          </td>
+                        </tr>
+                      )}
+
+                        {/* Comission ROW */}
+                      {order.ComissionAmount > 0 && (
+                        <tr>
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>Comission (5%)</strong>
+                          </td>
+
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>+₹{order.ComissionAmount || 0}</strong>
+                          </td>
+                        </tr>
+                      )}
                       {/* DELIVERY ROW */}
                       {order.delivery > 0 && (
                         <tr>
@@ -384,19 +410,6 @@ const History = () => {
 
                           <td colSpan={2} style={{ textAlign: "right" }}>
                             <strong>-₹{order.discount || 0}</strong>
-                          </td>
-                        </tr>
-                      )}
-
-                      {/* GST ROW */}
-                      {order.gstAmount > 0 && (
-                        <tr>
-                          <td colSpan={2} style={{ textAlign: "right" }}>
-                            <strong>APMC (2%)</strong>
-                          </td>
-
-                          <td colSpan={2} style={{ textAlign: "right" }}>
-                            <strong>+₹{order.gstAmount || 0}</strong>
                           </td>
                         </tr>
                       )}
@@ -438,6 +451,7 @@ const History = () => {
                             parsedDiscount={order.discount}
                             timestamp={order.timestamp}
                             gstAmount={order.gstAmount}
+                            ComissionAmount={order.ComissionAmount}
                             icon={() => (
                               <FaPrint
                                 size={32}

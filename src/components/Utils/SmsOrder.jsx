@@ -9,6 +9,7 @@ const SmsOrder = ({
   restaurantName = "",
   totalCustomerCredit,
   gstAmount,
+  ComissionAmount,
 }) => {
   const buildBody = () => {
     const lines = [];
@@ -27,12 +28,15 @@ const SmsOrder = ({
     if (gstAmount) {
       lines.push(`APMC: (2%) ₹${gstAmount.toFixed(2)}`)
     }
+    if (ComissionAmount) {
+      lines.push(`APMC: (5%) ₹${ComissionAmount.toFixed(2)}`)
+    }
     const total =
       productsToSend.reduce(
         (sum, p) => sum + p.price * (p.quantity || 1),
         0
       ) +
-      deliveryChargeAmount +  gstAmount -
+      deliveryChargeAmount +  gstAmount + ComissionAmount -
       parsedDiscount;
     lines.push(`Total: ₹${total.toFixed(2)}`);
     if(totalCustomerCredit) {

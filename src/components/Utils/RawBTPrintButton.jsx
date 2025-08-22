@@ -11,6 +11,7 @@ export default function RawBTPrintButton({
   timestamp,
   totalCustomerCredit,
   gstAmount,
+  ComissionAmount
 }){
 
   // Helper to calculate total price
@@ -20,6 +21,7 @@ export default function RawBTPrintButton({
  const handleRawBTPrint = () => {
     const hasDeliveryCharge = deliveryChargeAmount > 0; // Check if delivery charge exists
     const hasgstAmount = gstAmount > 0;
+    const hasComissionAmount = ComissionAmount > 0;
     const hasDiscount = parsedDiscount > 0; // Check if discount exists
     const hasCustomerName = customerName && customerName.trim() !== ""; // Check if customer name exists
     const hasCustomerPhone = customerPhone && String(customerPhone).trim() !== ""; // Check if customer phone exists
@@ -136,21 +138,24 @@ export default function RawBTPrintButton({
     invoiceText += `${detailedItems}\n`;
 
     // Add delivery charge and discount only if they exist
-    if (hasDeliveryCharge || hasDiscount || hasgstAmount) {
-      invoiceText += `             Item Total:  ${totalprice}\n`;
-    }
-    if (hasDeliveryCharge) {
-      invoiceText += `        Delivery Charge: +${delivery}\n`;
-    }
-    if (hasDiscount) {
-      invoiceText += `               Discount: -${DiscountAmount}\n`;
+    if (hasDeliveryCharge || hasDiscount || hasgstAmount || hasComissionAmount ) {
+      invoiceText += `            Item Total:  ${totalprice}\n${dash}\n`;
     }
     if (hasgstAmount) {
-      invoiceText += `              APMC: (2%) +  ${gstAmount}\n${dash}\n`
+      invoiceText += `             APMC: (2%) +  ${gstAmount}\n${dash}\n`
+    }
+    if (hasComissionAmount) {
+      invoiceText += `        Comission: (5%) +  ${ComissionAmount}\n${dash}\n`
+    }
+    if (hasDeliveryCharge) {
+      invoiceText += `       Delivery Charge: +${delivery}\n${dash}\n`;
+    }
+    if (hasDiscount) {
+      invoiceText += `              Discount: -${DiscountAmount}\n${dash}\n`;
     }
 
-invoiceText += `\x1B\x21\x30\x1B\x34Total: ${
-      calculateTotalPrice(productsToSend) + deliveryChargeAmount + gstAmount - parsedDiscount
+invoiceText += `\x1B\x21\x30\x1B\x34 Total: ${
+      calculateTotalPrice(productsToSend) + deliveryChargeAmount + gstAmount + ComissionAmount - parsedDiscount
     }/-\x1B\x21\x00\x1B\x35\n`;
 
     // Add credit information only if it exists
@@ -162,7 +167,7 @@ invoiceText += `\x1B\x21\x30\x1B\x34Total: ${
     Thank You Visit Again!
   ---------------------------
   
-Powered by BillZo || 7015823645
+ powered by BillZo||7015823645
        
   `;
 

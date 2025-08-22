@@ -9,6 +9,7 @@ export default function WhatsAppButton({
   restaurantName,
   totalCustomerCredit,
   gstAmount,
+  ComissionAmount,
 }) {
   // Helper to calculate total price of items
   const calculateTotalPrice = (items = []) =>
@@ -18,7 +19,8 @@ export default function WhatsAppButton({
     // Compute current total
     const currentTotal =
       calculateTotalPrice(productsToSend) +
-      gstAmount +
+      gstAmount + 
+      ComissionAmount +
       deliveryChargeAmount -
       parsedDiscount;
 
@@ -34,14 +36,18 @@ export default function WhatsAppButton({
       .join("\n");
 
     // Optional charges
+     const gstAmountText = gstAmount
+      ? `APMC: (2%) ₹${gstAmount}` 
+      : "";
+      const ComissionAmountText = ComissionAmount
+      ? `APMC: (5%) ₹${ComissionAmount}` 
+      : "";
+
     const serviceText = deliveryCharge
       ? `Service Charge: ₹${deliveryChargeAmount}`
       : "";
     const discountText = parsedDiscount
       ? `Discount: -₹${parsedDiscount}`
-      : "";
-     const gstAmountText = gstAmount
-      ? `APMC: (2%) ₹${gstAmount}` 
       : "";
 
     // Order ID
@@ -49,7 +55,7 @@ export default function WhatsAppButton({
 
     // Construct message
     const message = encodeURIComponent(
-      `*🍔🍟🍕 ${restaurantName} 🍕🍟🍔*\n\n` +
+      `*Chhinnamastika Traders*\n\n` +
         `Order: *${orderId}*` +
         (customerPhone ? `\nPhone: *${customerPhone}*` : "") +
         (customerAddress ? `\nAddress: *${customerAddress}*` : "") +
@@ -58,13 +64,9 @@ export default function WhatsAppButton({
         `\n\n----------item----------\n${productDetails}` +
         (serviceText ? `\n${serviceText}` : "") +
         (discountText ? `\n${discountText}` : "") +
-        (gstAmountText ? `\n${gstAmountText}`: "")
+        (gstAmountText ? `\n${gstAmountText}`: "") +
+        (ComissionAmountText ? `\n${ComissionAmountText}`: "")
     );
-
-    if (!customerPhone) {
-      alert("Customer phone is required to send message.");
-      return;
-    }
 
     // Format number for WhatsApp
     const formattedPhone = `+91${customerPhone}`;
