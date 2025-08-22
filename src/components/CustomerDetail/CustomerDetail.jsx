@@ -814,7 +814,7 @@ const CustomerDetail = () => {
         ref={invoiceRef}
         style={{ display: "none" }}
       >
-        <img src="/logo.png" alt="Logo" width={100} className="logo" />
+        <img src="/logo.jpg" alt="Logo" width={100} className="logo" />
         <h1 style={{ textAlign: "center", margin: 0, fontSize: "25px" }}>
           Chhinnamastika Traders
         </h1>
