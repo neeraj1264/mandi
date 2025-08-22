@@ -146,7 +146,7 @@ export default function RawBTPrintButton({
       invoiceText += `               Discount: -${DiscountAmount}\n`;
     }
     if (hasgstAmount) {
-      invoiceText += `               GST: (2%) +  ${gstAmount}\n${dash}\n`
+      invoiceText += `              APMC: (2%) +  ${gstAmount}\n${dash}\n`
     }
 
 invoiceText += `\x1B\x21\x30\x1B\x34Total: ${

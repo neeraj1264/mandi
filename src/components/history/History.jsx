@@ -392,7 +392,7 @@ const History = () => {
                       {order.gstAmount > 0 && (
                         <tr>
                           <td colSpan={2} style={{ textAlign: "right" }}>
-                            <strong>GST (2%)</strong>
+                            <strong>APMC (2%)</strong>
                           </td>
 
                           <td colSpan={2} style={{ textAlign: "right" }}>

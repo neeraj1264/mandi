@@ -41,7 +41,7 @@ export default function WhatsAppButton({
       ? `Discount: -₹${parsedDiscount}`
       : "";
      const gstAmountText = gstAmount
-      ? `GST: (2%) ₹${gstAmount}` 
+      ? `APMC: (2%) ₹${gstAmount}` 
       : "";
 
     // Order ID

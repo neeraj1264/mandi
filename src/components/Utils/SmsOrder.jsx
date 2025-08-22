@@ -25,7 +25,7 @@ const SmsOrder = ({
       lines.push(`Discount: -₹${parsedDiscount.toFixed(2)}`);
     }
     if (gstAmount) {
-      lines.push(`GST: (2%) ₹${gstAmount.toFixed(2)}`)
+      lines.push(`APMC: (2%) ₹${gstAmount.toFixed(2)}`)
     }
     const total =
       productsToSend.reduce(

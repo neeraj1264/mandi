@@ -638,7 +638,7 @@ const CustomerDetail = () => {
                 fontSize: "16px",
               }}
             >
-              Apply 2% GST
+              Apply 2% APMC
             </span>
           </div>
 
@@ -841,7 +841,7 @@ const CustomerDetail = () => {
             )}
             {applyGst && (
               <div className="total">
-                <p style={{ margin: "0" }}>GST (2%):</p>
+                <p style={{ margin: "0" }}>APMC (2%):</p>
                 <p style={{ margin: "0" }}>+{gstAmount.toFixed(2)}</p>
               </div>
             )}
