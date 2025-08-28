@@ -912,7 +912,7 @@ const CustomerDetail = () => {
                     ? `${product.name} (${product.size})`
                     : product.name}
                 </td>
-                <td style={{ textAlign: "Center" }}>{product.quantity || 1}</td>
+                <td style={{ textAlign: "Center" }}>{product.quantity || 1} {product.quantityType || "kg"}</td>
                 <td style={{ textAlign: "Center" }}>₹{product.price}</td>
                 <td style={{ textAlign: "Center" }}>
                   ₹{product.price * (product.quantity || 1)}
