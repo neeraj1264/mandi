@@ -381,7 +381,7 @@ export default function Invoice() {
           onClick={() => navigate("/customer-detail")}
           className="invoice-next-btn"
         >
-          <h2> NEXT ₹{calculateTotalPrice(productsToSend).toFixed(2)} </h2>
+          <h2> NEXT ₹{calculateTotalPrice(productsToSend).toFixed(1)} </h2>
         </button>
       </div>
 

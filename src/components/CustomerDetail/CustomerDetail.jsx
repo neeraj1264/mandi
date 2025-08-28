@@ -50,24 +50,24 @@ const calculateOrderTotals = (products, delivery, discount, applyGst, applyComis
   // Calculate GST if applicable
   let gstAmount = 0;
   if (applyGst) {
-    gstAmount = parseFloat((itemsTotal * 0.02).toFixed(2));
+    gstAmount = parseFloat((itemsTotal * 0.02).toFixed(1));
     finalTotal += gstAmount;
   }
 
     // Calculate GST if applicable
   let ComissionAmount = 0;
   if (applyComission) {
-    ComissionAmount = parseFloat((itemsTotal * 0.05).toFixed(2));
+    ComissionAmount = parseFloat((itemsTotal * 0.05).toFixed(1));
     finalTotal += ComissionAmount;
   }
 
   return {
-    itemsTotal: parseFloat(itemsTotal.toFixed(2)),
-    deliveryAmount: parseFloat(deliveryAmount.toFixed(2)),
-    discountAmount: parseFloat(discountAmount.toFixed(2)),
+    itemsTotal: parseFloat(itemsTotal.toFixed(1)),
+    deliveryAmount: parseFloat(deliveryAmount.toFixed(1)),
+    discountAmount: parseFloat(discountAmount.toFixed(1)),
     gstAmount: gstAmount,
     ComissionAmount: ComissionAmount,
-    finalTotal: parseFloat(finalTotal.toFixed(2)),
+    finalTotal: parseFloat(finalTotal.toFixed(1)),
   };
 };
 
@@ -230,7 +230,7 @@ const CustomerDetail = () => {
         return;
       }
       resolvedPaid = p;
-      resolvedCredit = parseFloat((finalTotal - p).toFixed(2));
+      resolvedCredit = parseFloat((finalTotal - p).toFixed(1));
     }
 
     // Validate that paid + credit equals total
@@ -277,6 +277,14 @@ const CustomerDetail = () => {
       ComissionAmount: ComissionAmount,
       paidAmount: resolvedPaid,
       creditAmount: resolvedCredit,
+       products: (productsToSend || []).map((p) => ({
+        name: p.name,
+        size: p.size,
+        price: Number(p.price) || 0,
+        quantity: Number(p.quantity) || 1,
+        // ensure qty type is persisted
+        quantityType: p.quantityType || "kg",
+      })),
     };
 
     console.log("Order being sent to DB:", order);
@@ -917,37 +925,37 @@ const CustomerDetail = () => {
           <>
             <div className="total">
               <p style={{ margin: "0" }}>Item Total</p>
-              <p style={{ margin: "0" }}>{totals.itemsTotal.toFixed(2)}</p>
+              <p style={{ margin: "0" }}>{totals.itemsTotal.toFixed(1)}</p>
             </div>
             {applyGst && (
               <div className="total">
                 <p style={{ margin: "0" }}>APMC (2%):</p>
-                <p style={{ margin: "0" }}>+{gstAmount.toFixed(2)}</p>
+                <p style={{ margin: "0" }}>+{gstAmount.toFixed(1)}</p>
               </div>
             )}
             {applyComission && (
               <div className="total">
                 <p style={{ margin: "0" }}>Comission (5%):</p>
-                <p style={{ margin: "0" }}>+{ComissionAmount.toFixed(2)}</p>
+                <p style={{ margin: "0" }}>+{ComissionAmount.toFixed(1)}</p>
               </div>
             )}
             {deliveryChargeAmount !== 0 && (
               <div className="total">
                 <p style={{ margin: "0" }}>Service Charge:</p>
                 <p style={{ margin: "0" }}>
-                  +{deliveryChargeAmount.toFixed(2)}
+                  +{deliveryChargeAmount.toFixed(1)}
                 </p>
               </div>
             )}
             {parsedDiscount !== 0 && (
               <div className="total">
                 <p style={{ margin: "0" }}>Discount:</p>
-                <p style={{ margin: "0" }}>-{parsedDiscount.toFixed(2)}</p>
+                <p style={{ margin: "0" }}>-{parsedDiscount.toFixed(1)}</p>
               </div>
             )}
           </>
         )}
-        <p className="totalAmount">Net Total: ₹{finalTotal.toFixed(2)}</p>
+        <p className="totalAmount">Net Total: ₹{finalTotal.toFixed(1)}</p>
         {totalCustomerCredit > 0 && (
           <p
             style={{
@@ -958,7 +966,7 @@ const CustomerDetail = () => {
               color: "#ff0000",
             }}
           >
-            Balance: ₹{totalCustomerCredit.toFixed(2)}
+            Balance: ₹{totalCustomerCredit.toFixed(1)}
           </p>
         )}
         <div

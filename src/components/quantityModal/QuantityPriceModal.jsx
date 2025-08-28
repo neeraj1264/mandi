@@ -4,8 +4,11 @@ import "./QuantityPriceModal.css"; // custom CSS file
 
 export default function QuantityPriceModal({ product, onSave, onClose }) {
   const [qty, setQty] = useState("");
+  const [qtyType, setQtyType] = useState("kg");
   const [price, setPrice] = useState("");
   const [selectedVarIdx, setSelectedVarIdx] = useState(0);
+
+  const quantityTypes = ["kg", "pc", "bx", "lt"];
 
   useEffect(() => {
     if (!product) return;
@@ -19,6 +22,7 @@ export default function QuantityPriceModal({ product, onSave, onClose }) {
       setPrice(initialPrice ?? product.price ?? "");
     }
     setQty("");
+    setQtyType("kg");
   }, [product]);
 
   if (!product) return null;
@@ -41,6 +45,7 @@ export default function QuantityPriceModal({ product, onSave, onClose }) {
       size: selectedVar?.size ?? product.size,
       price: Number(price),
       quantity: Number(qty),
+      quantityType: qtyType,
     };
 
     onSave(itemToAdd);
@@ -87,13 +92,27 @@ export default function QuantityPriceModal({ product, onSave, onClose }) {
         {/* Quantity */}
         <div className="qp-group">
           <label>Quantity</label>
+          <div style={{ display: "flex", gap: "8px" }}>
           <input
             type="number"
             min="1"
             value={qty}
             onChange={(e) => setQty(Number(e.target.value))}
             placeholder="Enter quantity"
+            style={{ flex: 1 }}
           />
+         <select
+              value={qtyType}
+              onChange={(e) => setQtyType(e.target.value)}
+              style={{ flex: "0.6" }}
+            >
+              {quantityTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Price */}

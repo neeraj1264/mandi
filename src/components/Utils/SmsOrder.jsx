@@ -17,19 +17,19 @@ const SmsOrder = ({
     lines.push("Order Details:");
     productsToSend.forEach((p) => {
       const qty = p.quantity || 1;
-      lines.push(`${p.name} x${qty} = ₹${(p.price * qty).toFixed(2)}`);
+      lines.push(`${p.name} x${qty} = ₹${(p.price * qty).toFixed(1)}`);
     });
     if (deliveryChargeAmount) {
-      lines.push(`Delivery: ₹${deliveryChargeAmount.toFixed(2)}`);
+      lines.push(`Delivery: ₹${deliveryChargeAmount.toFixed(1)}`);
     }
     if (parsedDiscount) {
-      lines.push(`Discount: -₹${parsedDiscount.toFixed(2)}`);
+      lines.push(`Discount: -₹${parsedDiscount.toFixed(1)}`);
     }
     if (gstAmount) {
-      lines.push(`APMC: (2%) ₹${gstAmount.toFixed(2)}`)
+      lines.push(`APMC: (2%) ₹${gstAmount.toFixed(1)}`)
     }
     if (ComissionAmount) {
-      lines.push(`APMC: (5%) ₹${ComissionAmount.toFixed(2)}`)
+      lines.push(`APMC: (5%) ₹${ComissionAmount.toFixed(1)}`)
     }
     const total =
       productsToSend.reduce(
@@ -38,7 +38,7 @@ const SmsOrder = ({
       ) +
       deliveryChargeAmount +  gstAmount + ComissionAmount -
       parsedDiscount;
-    lines.push(`Total: ₹${total.toFixed(2)}`);
+    lines.push(`Total: ₹${total.toFixed(1)}`);
     if(totalCustomerCredit) {
       lines.push(`Balance: ₹${totalCustomerCredit}`);
     }

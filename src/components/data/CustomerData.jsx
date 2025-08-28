@@ -94,9 +94,9 @@ export const CustomerData = () => {
     );
 
     // round to 2 decimals to avoid floating point weirdness
-    totals.totalSale = Number(totals.totalSale.toFixed(2));
-    totals.totalPaid = Number(totals.totalPaid.toFixed(2));
-    totals.totalCredit = Number(totals.totalCredit.toFixed(2));
+    totals.totalSale = Number(totals.totalSale.toFixed(1));
+    totals.totalPaid = Number(totals.totalPaid.toFixed(1));
+    totals.totalCredit = Number(totals.totalCredit.toFixed(1));
     return totals;
   };
 
@@ -150,13 +150,13 @@ export const CustomerData = () => {
 
                       {/* NEW: show Total Sale and Total Credit */}
                       <p>
-                        <strong>Total Sale:</strong> ₹{totals.totalSale.toFixed(2)}
+                        <strong>Total Sale:</strong> ₹{totals.totalSale.toFixed(1)}
                       </p>
                       <p>
-                        <strong>Total Credit:</strong> ₹{totals.totalCredit.toFixed(2)}
+                        <strong>Total Credit:</strong> ₹{totals.totalCredit.toFixed(1)}
                       </p>
                       <p>
-                        <strong>Total Cash:</strong> ₹{totals.totalPaid.toFixed(2)}
+                        <strong>Total Cash:</strong> ₹{totals.totalPaid.toFixed(1)}
                       </p>
 
                       {/* Expanded view: display orders grouped by date */}
@@ -225,7 +225,7 @@ export const CustomerData = () => {
                                             ).toLocaleTimeString()}
                                           </span>
                                           <span style={{ fontWeight: 600 }}>
-                                            ₹{(Number(order.totalAmount) || 0).toFixed(2)}
+                                            ₹{(Number(order.totalAmount) || 0).toFixed(1)}
                                           </span>
                                         </div>
 
@@ -233,9 +233,9 @@ export const CustomerData = () => {
                                         <div style={{ marginTop: 6, marginBottom: 6 }}>
                                           <strong>Sale Type:</strong> {order.saleType || "cash"}
                                           {"  |  "}
-                                          <strong>Paid:</strong> ₹{(Number(order.paidAmount) || 0).toFixed(2)}
+                                          <strong>Paid:</strong> ₹{(Number(order.paidAmount) || 0).toFixed(1)}
                                           {"  |  "}
-                                          <strong>Credit:</strong> ₹{(Number(order.creditAmount) || 0).toFixed(2)}
+                                          <strong>Credit:</strong> ₹{(Number(order.creditAmount) || 0).toFixed(1)}
                                         </div>
 
                                         <ul style={{ marginLeft: 14 }}>
@@ -244,7 +244,7 @@ export const CustomerData = () => {
                                               <li key={pIndex}>
                                                 {pIndex + 1}. {product.name}{" "}
                                                 {product.quantity ? `x${product.quantity}` : ""}
-                                                {" — "}₹{(Number(product.price) || 0).toFixed(2)}
+                                                {" — "}₹{(Number(product.price) || 0).toFixed(1)}
                                               </li>
                                             )
                                           )}
@@ -255,13 +255,13 @@ export const CustomerData = () => {
 
                                   <p>
                                     <strong>Total Price Spent on {date}:</strong>{" "}
-                                    ₹{totalOnDate.toFixed(2)}
+                                    ₹{totalOnDate.toFixed(1)}
                                   </p>
                                   <p>
-                                    <strong>Paid on {date}:</strong> ₹{paidOnDate.toFixed(2)}
+                                    <strong>Paid on {date}:</strong> ₹{paidOnDate.toFixed(1)}
                                   </p>
                                   <p>
-                                    <strong>Credit on {date}:</strong> ₹{creditOnDate.toFixed(2)}
+                                    <strong>Credit on {date}:</strong> ₹{creditOnDate.toFixed(1)}
                                   </p>
                                 </div>
                               );

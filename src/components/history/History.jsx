@@ -19,6 +19,10 @@ const toastOptions = {
   theme: "dark",
 };
 
+const formatNumber = (num, decimals = 1) => {
+  return Number.isInteger(num) ? num : num.toFixed(decimals);
+};
+
 const History = () => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -67,9 +71,9 @@ const History = () => {
     });
 
     return {
-      total: parseFloat(total.toFixed(2)),
-      cash: parseFloat(cashTotal.toFixed(2)),
-      credit: parseFloat(creditTotal.toFixed(2)),
+      total: parseFloat(total.toFixed(1)),
+      cash: parseFloat(cashTotal.toFixed(1)),
+      credit: parseFloat(creditTotal.toFixed(1)),
     };
   };
 
@@ -264,8 +268,8 @@ const History = () => {
               </select>
             </h2>
             <div className="paymentType">
-              <p>Cash: ₹{grandTotal.cash.toFixed(2)}</p>
-              <p>Credit: ₹{grandTotal.credit.toFixed(2)}</p>
+              <p>Cash: ₹{formatNumber(grandTotal.cash)}</p>
+              <p>Credit: ₹{formatNumber(grandTotal.credit)}</p>
             </div>
           </div>
 
@@ -296,7 +300,7 @@ const History = () => {
                     }}
                   >
                     <strong>
-                      Amount: ₹{order.totalAmount?.toFixed(2) || "0.00"}
+                      Amount: ₹{order.totalAmount ? formatNumber(order.totalAmount) : "0"}
                     </strong>
                     {order.saleType && (
                       <span
@@ -355,10 +359,10 @@ const History = () => {
                             ₹{product.price || 0}
                           </td>
                           <td style={{ textAlign: "center" }}>
-                            {product.quantity || 1}
+                            {product.quantity || 1} {product.quantityType || "kg"}
                           </td>
                           <td style={{ textAlign: "right" }}>
-                            ₹{(product.price || 0) * (product.quantity || 1)}
+                            ₹{formatNumber((product.price || 0) * (product.quantity || 1))}
                           </td>
                         </tr>
                       ))}
@@ -372,7 +376,7 @@ const History = () => {
                           </td>
 
                           <td colSpan={2} style={{ textAlign: "right" }}>
-                            <strong>+₹{order.gstAmount || 0}</strong>
+                            <strong>+₹{formatNumber(order.gstAmount)}</strong>
                           </td>
                         </tr>
                       )}
@@ -385,7 +389,7 @@ const History = () => {
                           </td>
 
                           <td colSpan={2} style={{ textAlign: "right" }}>
-                            <strong>+₹{order.ComissionAmount || 0}</strong>
+                            <strong>+₹{formatNumber(order.ComissionAmount)}</strong>
                           </td>
                         </tr>
                       )}
@@ -396,7 +400,7 @@ const History = () => {
                             <strong>Delivery</strong>
                           </td>
                           <td colSpan={2} style={{ textAlign: "right" }}>
-                            <strong>+₹{order.delivery || 0}</strong>
+                            <strong>+₹{formatNumber(order.delivery)}</strong>
                           </td>
                         </tr>
                       )}
@@ -409,7 +413,7 @@ const History = () => {
                           </td>
 
                           <td colSpan={2} style={{ textAlign: "right" }}>
-                            <strong>-₹{order.discount || 0}</strong>
+                            <strong>-₹{formatNumber(order.discount)}</strong>
                           </td>
                         </tr>
                       )}

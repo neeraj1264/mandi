@@ -28,7 +28,7 @@ export default function RawBTPrintButton({
     const hasCredit = totalCustomerCredit > 0; // Check if credit exists
 
     const orderWidth = 2;
-    const nameWidth = 11;
+    const nameWidth = 9;
     const priceWidth = 4;
     const quantityWidth = 2;
     const totalwidth = 4;
@@ -63,7 +63,7 @@ export default function RawBTPrintButton({
           " "
         ); // Pad quantity to the left
         const padNetPrice = `${paddedPrice * paddedQuantity}`.padStart(totalwidth, " ");
-
+        const qtyType = product.quantityType || "kg";
         // Combine name lines with the proper padding for price and quantity
         const productText = nameLines
           .map((line, index) => {
@@ -71,7 +71,7 @@ export default function RawBTPrintButton({
               return `${orderNumber}. ${line.padEnd(
                 nameWidth,
                 " "
-              )}${paddedPrice} x ${paddedQuantity} = ${padNetPrice}`;
+              )}${paddedPrice} x ${paddedQuantity}${qtyType} = ${padNetPrice}`;
             } else {
               return `    ${line.padEnd(nameWidth, " ")} ${"".padEnd(
                 priceWidth,
@@ -86,12 +86,16 @@ export default function RawBTPrintButton({
       .join("\n");
 
     // Add a border for the header
-    const header = ` No  Item Name   P  x  Q =   N  `;
+    const header = ` No Item Name  P  x  Q   =   N  `;
     const separator = `+${"-".repeat(nameWidth + 2)}+${"-".repeat(
       priceWidth + 2
     )}+${"-".repeat(quantityWidth + 2)}+`;
     const dash = `--------------------------------`; 
-    const totalprice = `${calculateTotalPrice(productsToSend)}`.padStart(
+    const formatNumber = (num, decimals = 1) => {
+  return Number.isInteger(num) ? num : num.toFixed(decimals);
+};
+
+    const totalprice = `${formatNumber(calculateTotalPrice(productsToSend))}`.padStart(
       priceWidth,
       " "
     );
@@ -144,10 +148,12 @@ export default function RawBTPrintButton({
       invoiceText += `            Item Total:  ${totalprice}\n${dash}\n`;
     }
     if (hasgstAmount) {
-      invoiceText += `             APMC: (2%) +  ${gstAmount}\n${dash}\n`
+      const formattedGst = formatNumber(gstAmount);
+      invoiceText += `             APMC: (2%) +  ${formattedGst}\n${dash}\n`
     }
     if (hasComissionAmount) {
-      invoiceText += `        Comission: (5%) +  ${ComissionAmount}\n${dash}\n`
+       const formattedCom = formatNumber(ComissionAmount);
+      invoiceText += `        Comission: (5%) +  ${formattedCom}\n${dash}\n`
     }
     if (hasDeliveryCharge) {
       invoiceText += `       Delivery Charge: +${delivery}\n${dash}\n`;
@@ -156,9 +162,15 @@ export default function RawBTPrintButton({
       invoiceText += `              Discount: -${DiscountAmount}\n${dash}\n`;
     }
 
-invoiceText += `\x1B\x21\x30\x1B\x34 Total: ${
-      calculateTotalPrice(productsToSend) + deliveryChargeAmount + gstAmount + ComissionAmount - parsedDiscount
-    }/-\x1B\x21\x00\x1B\x35\n`;
+const netTotal = formatNumber(
+  calculateTotalPrice(productsToSend) +
+  deliveryChargeAmount +
+  gstAmount +
+  ComissionAmount -
+  parsedDiscount
+);
+
+invoiceText += `\x1B\x21\x30\x1B\x34 Total:${netTotal}/-\x1B\x21\x00\x1B\x35\n`;
 
     // Add credit information only if it exists
     if (hasCredit) {

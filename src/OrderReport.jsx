@@ -154,7 +154,7 @@ const OrderReport = () => {
                 const datasetIndex = tooltipItem.datasetIndex;
                 const value = tooltipItem.raw;
                 return datasetIndex === 0
-                  ? `💰 Revenue: $${value.toFixed(2)}`
+                  ? `💰 Revenue: $${value.toFixed(1)}`
                   : `🛒 Orders: ${value}`;
               },
             },
@@ -291,7 +291,7 @@ const OrderReport = () => {
                   Total Orders: <strong>{filteredOrders.length}</strong>
                 </h2>
                 <h2 className="data-show">
-                  Total Revenue: <strong>Rs.{totalRevenue.toFixed(2)}</strong>
+                  Total Revenue: <strong>Rs.{totalRevenue.toFixed(1)}</strong>
                 </h2>
               </>
             )}
@@ -327,7 +327,7 @@ const OrderReport = () => {
                             {formatDate(order.timestamp)}
                           </td>
                           <td>{order.customerName || "Unknown"}</td>
-                          <td>Rs.{order.totalAmount.toFixed(2)}</td>
+                          <td>Rs.{order.totalAmount.toFixed(1)}</td>
                         </tr>
                         {expandedOrderId === order._id && (
                           <tr>
