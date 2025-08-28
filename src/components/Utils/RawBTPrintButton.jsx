@@ -71,7 +71,7 @@ export default function RawBTPrintButton({
               return `${orderNumber}. ${line.padEnd(
                 nameWidth,
                 " "
-              )}${paddedPrice} x ${paddedQuantity} = ${padNetPrice}`;
+              )} ${paddedPrice} x ${paddedQuantity} = ${padNetPrice}`;
             } else {
               return `    ${line.padEnd(nameWidth, " ")} ${"".padEnd(
                 priceWidth,
