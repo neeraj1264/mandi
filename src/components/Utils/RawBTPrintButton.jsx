@@ -28,9 +28,10 @@ export default function RawBTPrintButton({
     const hasCredit = totalCustomerCredit > 0; // Check if credit exists
 
     const orderWidth = 2;
-    const nameWidth = 16; // Set a fixed width for product name
-    const priceWidth = 4; // Set a fixed width for price
-    const quantityWidth = 2; // Set a fixed width for quantity
+    const nameWidth = 11;
+    const priceWidth = 4;
+    const quantityWidth = 2;
+    const totalwidth = 4;
 
     // Helper function to break a product name into multiple lines if needed
     const breakProductName = (name, maxLength) => {
@@ -61,6 +62,7 @@ export default function RawBTPrintButton({
           quantityWidth,
           " "
         ); // Pad quantity to the left
+        const padNetPrice = `${paddedPrice * paddedQuantity}`.padStart(totalwidth, " ");
 
         // Combine name lines with the proper padding for price and quantity
         const productText = nameLines
@@ -69,7 +71,7 @@ export default function RawBTPrintButton({
               return `${orderNumber}. ${line.padEnd(
                 nameWidth,
                 " "
-              )} ${paddedQuantity} x ${paddedPrice} `;
+              )}${paddedPrice} x ${paddedQuantity} = ${padNetPrice}`;
             } else {
               return `    ${line.padEnd(nameWidth, " ")} ${"".padEnd(
                 priceWidth,
@@ -84,7 +86,7 @@ export default function RawBTPrintButton({
       .join("\n");
 
     // Add a border for the header
-    const header = ` No Item Name       Qty  price `;
+    const header = ` No  Item Name   P  x  Q =   N  `;
     const separator = `+${"-".repeat(nameWidth + 2)}+${"-".repeat(
       priceWidth + 2
     )}+${"-".repeat(quantityWidth + 2)}+`;

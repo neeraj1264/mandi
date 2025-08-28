@@ -10,7 +10,7 @@ export default function QuantityPriceModal({ product, onSave, onClose }) {
   useEffect(() => {
     if (!product) return;
       // read optional initial price passed from parent
-      const initialPrice = product.initialPrice;
+      const initialPrice = "";
     if (product.varieties && product.varieties.length > 0) {
       setSelectedVarIdx(0);
       setPrice(initialPrice ?? product.varieties[0].price ?? "");
