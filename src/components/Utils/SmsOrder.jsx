@@ -17,7 +17,9 @@ const SmsOrder = ({
     lines.push("Order Details:");
     productsToSend.forEach((p) => {
       const qty = p.quantity || 1;
-      lines.push(`${p.name} x${qty} = ₹${(p.price * qty).toFixed(1)}`);
+      const qtyType = p.quantityType || "kg";
+      const quantity = `${qty} ${qtyType}`;
+      lines.push(`${p.name} - ${p.price} x ${quantity} = ₹${(p.price * qty).toFixed(1)}`);
     });
     if (deliveryChargeAmount) {
       lines.push(`Delivery: ₹${deliveryChargeAmount.toFixed(1)}`);

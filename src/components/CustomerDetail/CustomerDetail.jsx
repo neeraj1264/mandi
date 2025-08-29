@@ -277,14 +277,6 @@ const CustomerDetail = () => {
       ComissionAmount: ComissionAmount,
       paidAmount: resolvedPaid,
       creditAmount: resolvedCredit,
-       products: (productsToSend || []).map((p) => ({
-        name: p.name,
-        size: p.size,
-        price: Number(p.price) || 0,
-        quantity: Number(p.quantity) || 1,
-        // ensure qty type is persisted
-        quantityType: p.quantityType || "kg",
-      })),
     };
 
     console.log("Order being sent to DB:", order);
@@ -899,8 +891,8 @@ const CustomerDetail = () => {
           <thead>
             <tr className="productname">
               <th>Item</th>
-              <th>Qty</th>
               <th>Price</th>
+              <th>Qty</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -912,8 +904,8 @@ const CustomerDetail = () => {
                     ? `${product.name} (${product.size})`
                     : product.name}
                 </td>
+                <td style={{ textAlign: "Center" }}>₹{product.price}</td>                
                 <td style={{ textAlign: "Center" }}>{product.quantity || 1} {product.quantityType || "kg"}</td>
-                <td style={{ textAlign: "Center" }}>₹{product.price}</td>
                 <td style={{ textAlign: "Center" }}>
                   ₹{product.price * (product.quantity || 1)}
                 </td>

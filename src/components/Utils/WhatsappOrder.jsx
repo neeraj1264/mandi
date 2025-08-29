@@ -28,8 +28,10 @@ export default function WhatsAppButton({
     const productDetails = productsToSend
       .map((product, i) => {
         const qty = product.quantity || 1;
+        const qtyType = product.quantityType || "kg";
+        const quantity = `${qty} ${qtyType}`;
         const sizeLabel = product.size ? ` ${product.size}` : "";
-        return `${i + 1}. ${qty} x ${product.name}${sizeLabel} = ₹${
+        return `${i + 1}.${product.name}${sizeLabel} - ${product.price} x ${quantity} = ₹${
           product.price * qty
         }`;
       })
