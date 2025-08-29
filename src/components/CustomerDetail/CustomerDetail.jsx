@@ -948,7 +948,8 @@ const CustomerDetail = () => {
         {(deliveryChargeAmount !== 0 ||
           parsedDiscount !== 0 ||
           applyGst ||
-          applyComission) && (
+          applyComission || 
+          balanceAmount!==0 ) && (
           <>
             <div className="total">
               <p style={{ margin: "0" }}>Item Total</p>
