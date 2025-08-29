@@ -418,6 +418,18 @@ const History = () => {
                         </tr>
                       )}
 
+                      {order.balanceAmount > 0 && (
+                        <tr>
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>Balance</strong>
+                          </td>
+
+                          <td colSpan={2} style={{ textAlign: "right" }}>
+                            <strong>+₹{formatNumber(order.balanceAmount)}</strong>
+                          </td>
+                        </tr>
+                      )}
+
                       {/* Payment details for partial payments */}
                       {order.saleType === "partial" && (
                         <>
@@ -449,6 +461,7 @@ const History = () => {
                         <td colSpan={4} style={{ textAlign: "center" }}>
                           <RawBTPrintButton
                             productsToSend={order.products}
+                            balanceAmount={order.balanceAmount}
                             customerPhone={order.phone}
                             customerName={order.name}
                             deliveryChargeAmount={order.delivery}

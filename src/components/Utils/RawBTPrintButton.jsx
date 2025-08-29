@@ -9,9 +9,9 @@ export default function RawBTPrintButton({
   customerName,
   icon: Icon,
   timestamp,
-  totalCustomerCredit,
   gstAmount,
-  ComissionAmount
+  ComissionAmount,
+  balanceAmount
 }){
 
   // Helper to calculate total price
@@ -22,10 +22,10 @@ export default function RawBTPrintButton({
     const hasDeliveryCharge = deliveryChargeAmount > 0; // Check if delivery charge exists
     const hasgstAmount = gstAmount > 0;
     const hasComissionAmount = ComissionAmount > 0;
+    const hasbalanceAmount = balanceAmount > 0;
     const hasDiscount = parsedDiscount > 0; // Check if discount exists
     const hasCustomerName = customerName && customerName.trim() !== ""; // Check if customer name exists
     const hasCustomerPhone = customerPhone && String(customerPhone).trim() !== ""; // Check if customer phone exists
-    const hasCredit = totalCustomerCredit > 0; // Check if credit exists
 
     const orderWidth = 2;
     const nameWidth = 9;
@@ -34,15 +34,27 @@ export default function RawBTPrintButton({
     const totalwidth = 4;
 
     // Helper function to break a product name into multiple lines if needed
-    const breakProductName = (name, maxLength) => {
-      const lines = [];
-      while (name.length > maxLength) {
-        lines.push(name.substring(0, maxLength)); // Add a line of the name
-        name = name.substring(maxLength); // Remove the part that has been used
-      }
-      lines.push(name); // Add the last remaining part of the name
-      return lines;
-    };
+   const breakProductName = (name, maxLength) => {
+  const words = name.split(" ");
+  const lines = [];
+  let currentLine = "";
+
+  words.forEach(word => {
+    if ((currentLine + word).length > maxLength) {
+      lines.push(currentLine.trim());
+      currentLine = word + " ";
+    } else {
+      currentLine += word + " ";
+    }
+  });
+
+  if (currentLine.trim().length > 0) {
+    lines.push(currentLine.trim());
+  }
+
+  return lines;
+};
+
 
     // Map product details into a formatted string with borders
     const productDetails = productsToSend
@@ -71,13 +83,10 @@ export default function RawBTPrintButton({
               return `${orderNumber}. ${line.padEnd(
                 nameWidth,
                 " "
-              )}${paddedPrice} x ${paddedQuantity}${qtyType} = ${padNetPrice}`;
+              )}${paddedQuantity}${qtyType} x ${paddedPrice} = ${padNetPrice}`;
             } else {
-              return `    ${line.padEnd(nameWidth, " ")} ${"".padEnd(
-                priceWidth,
-                " "
-              )} ${"".padEnd(quantityWidth, " ")} `;
-            }
+      return ` ${line}`; // continuation only shows the name
+    }
           })
           .join(""); // Join the product name lines with a newline
 
@@ -86,7 +95,7 @@ export default function RawBTPrintButton({
       .join("\n");
 
     // Add a border for the header
-    const header = ` No Item Name  P  x  Q   =   N  `;
+    const header = ` No Item Name  Q  x   P  =   N  `;
     const separator = `+${"-".repeat(nameWidth + 2)}+${"-".repeat(
       priceWidth + 2
     )}+${"-".repeat(quantityWidth + 2)}+`;
@@ -144,7 +153,7 @@ export default function RawBTPrintButton({
     invoiceText += `${detailedItems}\n`;
 
     // Add delivery charge and discount only if they exist
-    if (hasDeliveryCharge || hasDiscount || hasgstAmount || hasComissionAmount ) {
+    if (hasDeliveryCharge || hasDiscount || hasgstAmount || hasComissionAmount || balanceAmount ) {
       invoiceText += `            Item Total:  ${totalprice}\n${dash}\n`;
     }
     if (hasgstAmount) {
@@ -161,21 +170,22 @@ export default function RawBTPrintButton({
     if (hasDiscount) {
       invoiceText += `              Discount: -${DiscountAmount}\n${dash}\n`;
     }
+    if (hasbalanceAmount) {
+      invoiceText += `               balance: +${balanceAmount}\n${dash}\n`;
+    }
 
 const netTotal = formatNumber(
   calculateTotalPrice(productsToSend) +
   deliveryChargeAmount +
   gstAmount +
   ComissionAmount -
-  parsedDiscount
+  parsedDiscount +
+  balanceAmount
 );
 
 invoiceText += `\x1B\x21\x30\x1B\x34 Total:${netTotal}/-\x1B\x21\x00\x1B\x35\n`;
 
     // Add credit information only if it exists
-    if (hasCredit) {
-      invoiceText += `  Balance: ${totalCustomerCredit}/-\n`;
-    }
 
     invoiceText += `  
     Thank You Visit Again!

@@ -31,7 +31,7 @@ export default function WhatsAppButton({
         const qtyType = product.quantityType || "kg";
         const quantity = `${qty} ${qtyType}`;
         const sizeLabel = product.size ? ` ${product.size}` : "";
-        return `${i + 1}.${product.name}${sizeLabel} - ${product.price} x ${quantity} = ₹${
+        return `${i + 1}.${product.name}${sizeLabel} - ${quantity} x ${product.price} = ₹${
           product.price * qty
         }`;
       })

@@ -35,7 +35,14 @@ const parseNumber = (value) => {
 };
 
 // Consistent calculation function
-const calculateOrderTotals = (products, delivery, discount, applyGst, applyComission) => {
+const calculateOrderTotals = (
+  products,
+  delivery,
+  discount,
+  applyGst,
+  applyComission,
+  balance
+) => {
   let itemsTotal = products.reduce(
     (sum, product) =>
       sum + parseNumber(product.price) * parseNumber(product.quantity || 1),
@@ -54,19 +61,23 @@ const calculateOrderTotals = (products, delivery, discount, applyGst, applyComis
     finalTotal += gstAmount;
   }
 
-    // Calculate GST if applicable
+  // Calculate GST if applicable
   let ComissionAmount = 0;
   if (applyComission) {
     ComissionAmount = parseFloat((itemsTotal * 0.05).toFixed(1));
     finalTotal += ComissionAmount;
   }
 
+  let balanceAmount = parseNumber(balance);
+  finalTotal += balanceAmount;
+
   return {
     itemsTotal: parseFloat(itemsTotal.toFixed(1)),
     deliveryAmount: parseFloat(deliveryAmount.toFixed(1)),
     discountAmount: parseFloat(discountAmount.toFixed(1)),
-    gstAmount: gstAmount,
-    ComissionAmount: ComissionAmount,
+    gstAmount,
+    ComissionAmount,
+    balanceAmount: parseFloat(balanceAmount.toFixed(1)),
     finalTotal: parseFloat(finalTotal.toFixed(1)),
   };
 };
@@ -94,6 +105,7 @@ const CustomerDetail = () => {
   const navigate = useNavigate();
   const [saleType, setSaleType] = useState("");
   const [paidAmount, setPaidAmount] = useState("");
+  const [balance, setBalance] = useState("");
 
   useEffect(() => {
     // Load selected products from localStorage
@@ -206,9 +218,11 @@ const CustomerDetail = () => {
       deliveryCharge,
       discount,
       applyGst,
-      applyComission
+      applyComission,
+      balance
     );
     const finalTotal = totals.finalTotal;
+    const balanceAmount = totals.balanceAmount;
 
     // Compute paid/credit depending on sale type
     let resolvedPaid = 0;
@@ -272,9 +286,10 @@ const CustomerDetail = () => {
       delivery: totals.deliveryAmount,
       saleType,
       gstApplied: applyGst,
-      gstAmount: gstAmount,
+      gstAmount: totals.gstAmount,
       ComissionApplied: applyComission,
-      ComissionAmount: ComissionAmount,
+      ComissionAmount: totals.ComissionAmount,
+      balanceAmount: totals.balanceAmount,
       paidAmount: resolvedPaid,
       creditAmount: resolvedCredit,
     };
@@ -474,12 +489,14 @@ const CustomerDetail = () => {
     deliveryCharge,
     discount,
     applyGst,
-    applyComission
+    applyComission,
+    balance,
   );
   const deliveryChargeAmount = totals.deliveryAmount;
   const parsedDiscount = totals.discountAmount;
   const gstAmount = totals.gstAmount;
   const ComissionAmount = totals.ComissionAmount;
+  const balanceAmount = totals.balanceAmount;
   const finalTotal = totals.finalTotal;
 
   return (
@@ -684,7 +701,7 @@ const CustomerDetail = () => {
         </div>
       </div>
 
- {/* Comission Toggle */}
+      {/* Comission Toggle */}
       <div className="cust-inputs">
         <div
           style={{
@@ -711,7 +728,7 @@ const CustomerDetail = () => {
                 borderRadius: "4px",
                 border: "2px solid #4CAF50",
                 marginRight: "12px",
-                backgroundColor:  applyComission ? "#4CAF50" : "white",
+                backgroundColor: applyComission ? "#4CAF50" : "white",
                 transition: "all 0.2s ease",
               }}
             >
@@ -767,6 +784,14 @@ const CustomerDetail = () => {
         </div>
       </div>
 
+      <div className="cust-inputs">
+        <input
+          type="number"
+          value={balance}
+          onChange={(e) => setBalance(e.target.value)}
+          placeholder="Balance amount..."
+        />
+      </div>
       <div style={{ marginBottom: "8rem" }}>
         <div className="cust-inputs">
           <label style={{ display: "block", margin: "0 0 6px 21px" }}>
@@ -876,6 +901,11 @@ const CustomerDetail = () => {
               })}
           </p>
 
+  {customerName && (
+            <p style={{ fontSize: "12px" }}>
+              Name &nbsp;- &nbsp;{customerName}
+            </p>
+          )}
           {customerPhone && (
             <p style={{ fontSize: "12px" }}>
               Phone Number &nbsp;- &nbsp;{customerPhone}
@@ -883,7 +913,7 @@ const CustomerDetail = () => {
           )}
           {customerAddress && (
             <p style={{ fontSize: "13px" }}>
-              Address&nbsp;-&nbsp;{customerAddress}
+              Address&nbsp;-&nbsp;{customerAddress} 
             </p>
           )}
         </div>
@@ -891,8 +921,8 @@ const CustomerDetail = () => {
           <thead>
             <tr className="productname">
               <th>Item</th>
+              <th>Quantity</th>
               <th>Price</th>
-              <th>Qty</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -904,8 +934,10 @@ const CustomerDetail = () => {
                     ? `${product.name} (${product.size})`
                     : product.name}
                 </td>
-                <td style={{ textAlign: "Center" }}>₹{product.price}</td>                
-                <td style={{ textAlign: "Center" }}>{product.quantity || 1} {product.quantityType || "kg"}</td>
+                <td style={{ textAlign: "Center" }}>
+                  {product.quantity || 1} {product.quantityType || "kg"}
+                </td>
+                <td style={{ textAlign: "Center" }}>₹{product.price}</td>
                 <td style={{ textAlign: "Center" }}>
                   ₹{product.price * (product.quantity || 1)}
                 </td>
@@ -913,7 +945,10 @@ const CustomerDetail = () => {
             ))}
           </tbody>
         </table>
-        {(deliveryChargeAmount !== 0 || parsedDiscount !== 0 || applyGst || applyComission) && (
+        {(deliveryChargeAmount !== 0 ||
+          parsedDiscount !== 0 ||
+          applyGst ||
+          applyComission) && (
           <>
             <div className="total">
               <p style={{ margin: "0" }}>Item Total</p>
@@ -945,22 +980,15 @@ const CustomerDetail = () => {
                 <p style={{ margin: "0" }}>-{parsedDiscount.toFixed(1)}</p>
               </div>
             )}
+            {balanceAmount !== 0 && (
+              <div className="total">
+                <p style={{ margin: "0" }}>Balance:</p>
+                <p style={{ margin: "0" }}>+{balanceAmount.toFixed(1)}</p>
+              </div>
+            )}
           </>
         )}
         <p className="totalAmount">Net Total: ₹{finalTotal.toFixed(1)}</p>
-        {totalCustomerCredit > 0 && (
-          <p
-            style={{
-              fontSize: "14px",
-              fontWeight: "bold",
-              textAlign: "center",
-              margin: "8px 0",
-              color: "#ff0000",
-            }}
-          >
-            Balance: ₹{totalCustomerCredit.toFixed(1)}
-          </p>
-        )}
         <div
           style={{
             textAlign: "center",
@@ -992,6 +1020,7 @@ const CustomerDetail = () => {
             <WhatsAppButton
               productsToSend={productsToSend}
               deliveryChargeAmount={deliveryChargeAmount}
+              balanceAmount={balanceAmount}
               deliveryCharge={deliveryCharge}
               parsedDiscount={parsedDiscount}
               customerPhone={customerPhone}
@@ -1006,6 +1035,7 @@ const CustomerDetail = () => {
             <SmsOrder
               productsToSend={productsToSend}
               deliveryChargeAmount={deliveryChargeAmount}
+              balanceAmount={balanceAmount}
               parsedDiscount={parsedDiscount}
               customerPhone={customerPhone}
               customerName={customerName}
@@ -1022,6 +1052,7 @@ const CustomerDetail = () => {
             <RawBTPrintButton
               productsToSend={productsToSend}
               parsedDiscount={parsedDiscount}
+              balanceAmount={balanceAmount}
               deliveryChargeAmount={deliveryChargeAmount}
               customerPhone={customerPhone}
               customerName={customerName}
