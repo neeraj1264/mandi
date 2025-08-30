@@ -3,7 +3,7 @@ const getBaseUrl = () => {
   if (!geturl) {
     throw new Error("BASE_URL is not available in local storage"); 
   }
-  return geturl;
+  return geturl; 
 };
 
 const fetchWithBaseUrl = async (endpoint, options = {}) => {
