@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { fetchcustomerdata, setdata, addKhataTransaction } from "../../api";
-import "./KhataBookApp.css";
+import "./KhatabookApp.css";
 import Header from "../header/Header";
 
 export default function KhataBook() {
