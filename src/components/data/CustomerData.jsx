@@ -153,10 +153,7 @@ export const CustomerData = () => {
                         <strong>Total Sale:</strong> ₹{totals.totalSale.toFixed(1)}
                       </p>
                       <p>
-                        <strong>Total Credit:</strong> ₹{totals.totalCredit.toFixed(1)}
-                      </p>
-                      <p>
-                        <strong>Total Cash:</strong> ₹{totals.totalPaid.toFixed(1)}
+                        <strong>Total Credit:</strong> ₹{customer.totalOwed || 0}
                       </p>
 
                       {/* Expanded view: display orders grouped by date */}

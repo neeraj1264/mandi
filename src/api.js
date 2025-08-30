@@ -106,3 +106,11 @@ export const sendInvoiceEmail = (orderId, customerEmail) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderId, customerEmail })
   });
+
+  export const addKhataTransaction = async (customerId, txn) => {
+  return fetchWithBaseUrl(`/customerdata/${customerId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(txn),   // { type: "received", amount: 500 }
+  });
+};

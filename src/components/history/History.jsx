@@ -138,7 +138,6 @@ const History = () => {
       try {
         const data = await fetchOrders();
         setOrders(data);
-        console.log("fetching order ", data)
 
         // Calculate start and end time for the selected day
         const today = new Date();

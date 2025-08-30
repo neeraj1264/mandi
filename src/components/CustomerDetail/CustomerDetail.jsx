@@ -197,6 +197,15 @@ const CustomerDetail = () => {
     setCustomerAddress(customer.address);
     setPhoneSuggestions([]);
     setNameSuggestions([]);
+
+      // auto-fill balance if customer owes you
+  const bal = parseNumber(customer.lifetimeSale) - parseNumber(customer.receivedAmount);
+  if (bal > 0) {
+    setBalance(bal.toFixed(1));
+  } else {
+    setBalance(""); // clear if nothing owed or overpaid
+  }
+
   };
 
   const handleNameSuggestionClick = (customer) => {
@@ -205,6 +214,13 @@ const CustomerDetail = () => {
     setCustomerAddress(customer.address);
     setNameSuggestions([]);
     setPhoneSuggestions([]);
+
+      const bal = parseNumber(customer.lifetimeSale) - parseNumber(customer.receivedAmount);
+  if (bal > 0) {
+    setBalance(bal.toFixed(1));
+  } else {
+    setBalance("");
+  }
   };
 
   const handleSendClick = async () => {
