@@ -365,3 +365,76 @@
 .fa-spinner {
   margin-right: 6px;
 }
+
+.transaction-entries {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #edf2f7; /* dark background */
+  color: #fff;
+}
+.transaction-entries h3{
+  color: var(--bg);
+  text-align: center;
+}
+.entry-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #bbb;
+  margin-bottom: 6px;
+}
+
+.entry-body {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+}
+
+.amount {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.amount.gave {
+  color: #ff4d4d; /* red for gave */
+}
+
+.amount.received {
+  color: #4caf50; /* green for received */
+}
+
+.balance {
+  font-weight: bold;
+}
+
+.no-transactions {
+  color: #aaa;
+  text-align: center;
+}
+
+.btn-download {
+  width: 100%;
+  margin-top: 10px;
+  background: #ED6629;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.date-header{
+  color: black;
+  font-size: .8rem;
+  text-align: center;
+}

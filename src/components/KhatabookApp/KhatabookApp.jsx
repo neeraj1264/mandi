@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { fetchcustomerdata, setdata, addKhataTransaction } from "../../api";
 import "./KhatabookApp.css";
 import Header from "../header/Header";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function KhataBook() {
   const [customers, setCustomers] = useState([]);
@@ -89,6 +91,77 @@ export default function KhataBook() {
     const owed = (c.lifetimeSale || 0) - (c.receivedAmount || 0);
     return owed < 0 ? sum + Math.abs(owed) : sum;
   }, 0);
+
+const handleDownloadPDF = async (customer) => {
+  try {
+    const element = document.getElementById(`transactions-${customer._id}`);
+    if (!element) return alert("No transactions section found");
+
+    // Capture section as canvas
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    // PDF sizes
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    // Scale canvas to fit page width
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    // First page
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    // Extra pages if needed
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight; // shift upward
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+    }
+
+    pdf.save(`${customer.name}_transactions.pdf`);
+  } catch (err) {
+    console.error("PDF download failed:", err);
+    alert("Failed to generate PDF");
+  }
+};
+
+  const groupTransactionsByDate = (transactions = []) => {
+  return transactions.reduce((acc, t) => {
+    if (!t.date) return acc;
+    const d = new Date(t.date);
+    const dateKey = d.toDateString(); // groups by day
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(t);
+    return acc;
+  }, {});
+};
+
+// Optional: format to "Today", "Yesterday", or full date
+const formatDateHeading = (dateKey) => {
+  const date = new Date(dateKey).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (new Date(dateKey).toDateString() === today.toDateString()) {
+    return `${date} (Today)`;
+  }
+  if (new Date(dateKey).toDateString() === yesterday.toDateString()) {
+    return `${date} (Yesterday)`;
+  }
+  return date
+};
 
   return (
     <>
@@ -299,7 +372,65 @@ export default function KhataBook() {
                             </button>
                           </>
                         )}
-                      </div>
+</div>
+
+<div
+  id={`transactions-${c._id}`}   // ✅ unique ID for each customer
+  className="transaction-entries"
+>
+  <h3>Entries</h3>
+  {(!c.transactions || c.transactions.length === 0) ? (
+    <p className="no-transactions">No transactions available.</p>
+  ) : (
+    Object.entries(
+      groupTransactionsByDate(
+        c.transactions.sort((a, b) => new Date(b.date) - new Date(a.date))
+      )
+    ).map(([dateKey, entries]) => (
+      <div key={dateKey} className="date-group">
+        <div className="date-header">{formatDateHeading(dateKey)}</div>
+        {entries.map((t, i) => (
+          <div key={i} className="entry-card">
+            <div className="entry-header">
+              <span>
+                {new Date(t.date).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+              <span className="balance">
+                Bal. {formatCurrency(t.balance || 0)}
+              </span>
+            </div>
+            <div className="entry-body">
+              <div
+                className={`amount ${
+                  t.type === "received" ? "received" : "gave"
+                }`}
+              >
+                {t.type === "received" ? `₹ ${t.amount}` : ""}
+              </div>
+              <div
+                className={`amount ${
+                  t.type === "gave" ? "gave" : "received"
+                }`}
+              >
+                {t.type === "gave" ? `₹ ${t.amount}` : ""}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    ))
+  )}
+
+  {/* ✅ Download button stays inside the same section */}
+  <button className="btn-download" onClick={() => handleDownloadPDF(c)}>
+    <i className="fas fa-download"></i> Download PDF
+  </button>
+</div>
+
+
                     </>
                   )}
 
