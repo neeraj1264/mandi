@@ -17,6 +17,7 @@ export default function KhataBook() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [loading, setLoading] = useState(false);
   const [loadingTransaction, setLoadingTransaction] = useState(false);
 
   useEffect(() => {
@@ -24,8 +25,15 @@ export default function KhataBook() {
   }, []);
 
   const loadCustomers = async () => {
-    const data = await fetchcustomerdata();
-    setCustomers(data);
+    try {
+      setLoading(true);
+      const data = await fetchcustomerdata();
+      setCustomers(data);
+    } catch (err) {
+      console.error("Failed to load customers:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddCustomer = async () => {
@@ -42,10 +50,18 @@ export default function KhataBook() {
       totalOwed: 0,
     };
 
-    await setdata(customerData);
-    setNewCustomer({ name: "", phone: "" });
-    setShowAddCustomer(false);
-    loadCustomers();
+    try {
+      setLoading(true);
+      await setdata(customerData);
+      setNewCustomer({ name: "", phone: "" });
+      setShowAddCustomer(false);
+      await loadCustomers();
+    } catch (err) {
+      console.error("Failed to add customer:", err);
+      alert("Failed to add customer");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTransaction = async (customerId, type) => {
@@ -92,79 +108,97 @@ export default function KhataBook() {
     return owed < 0 ? sum + Math.abs(owed) : sum;
   }, 0);
 
-const handleDownloadPDF = async (customer) => {
-  try {
-    const element = document.getElementById(`transactions-${customer._id}`);
-    if (!element) return alert("No transactions section found");
+  const handleDownloadPDF = async (customer) => {
+    try {
+      const element = document.getElementById(`transactions-${customer._id}`);
+      if (!element) return alert("No transactions section found");
 
-    // Capture section as canvas
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
+      // Capture section as canvas
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
 
-    // PDF sizes
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+      // PDF sizes
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Scale canvas to fit page width
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // Scale canvas to fit page width
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    let heightLeft = imgHeight;
-    let position = 0;
+      let heightLeft = imgHeight;
+      let position = 0;
 
-    // First page
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pdfHeight;
-
-    // Extra pages if needed
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight; // shift upward
-      pdf.addPage();
+      // First page
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
-    }
 
-    pdf.save(`${customer.name}_transactions.pdf`);
-  } catch (err) {
-    console.error("PDF download failed:", err);
-    alert("Failed to generate PDF");
-  }
-};
+      // Extra pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight; // shift upward
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`${customer.name}_transactions.pdf`);
+    } catch (err) {
+      console.error("PDF download failed:", err);
+      alert("Failed to generate PDF");
+    }
+  };
 
   const groupTransactionsByDate = (transactions = []) => {
-  return transactions.reduce((acc, t) => {
-    if (!t.date) return acc;
-    const d = new Date(t.date);
-    const dateKey = d.toDateString(); // groups by day
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey].push(t);
-    return acc;
-  }, {});
-};
+    return transactions.reduce((acc, t) => {
+      if (!t.date) return acc;
+      const d = new Date(t.date);
+      const dateKey = d.toDateString(); // groups by day
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(t);
+      return acc;
+    }, {});
+  };
 
-// Optional: format to "Today", "Yesterday", or full date
-const formatDateHeading = (dateKey) => {
-  const date = new Date(dateKey).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+  // Optional: format to "Today", "Yesterday", or full date
+  const formatDateHeading = (dateKey) => {
+    const date = new Date(dateKey).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
 
-  if (new Date(dateKey).toDateString() === today.toDateString()) {
-    return `${date} (Today)`;
-  }
-  if (new Date(dateKey).toDateString() === yesterday.toDateString()) {
-    return `${date} (Yesterday)`;
-  }
-  return date
-};
+    if (new Date(dateKey).toDateString() === today.toDateString()) {
+      return `${date} (Today)`;
+    }
+    if (new Date(dateKey).toDateString() === yesterday.toDateString()) {
+      return `${date} (Yesterday)`;
+    }
+    return date;
+  };
+
+  const calculateRunningBalances = (transactions, openingBalance = 0) => {
+    let balance = openingBalance;
+    return transactions.map((t) => {
+      if (t.type === "received") {
+        balance += t.amount;
+      } else if (t.type === "gave") {
+        balance -= t.amount;
+      }
+      return { ...t, balance };
+    });
+  };
 
   return (
     <>
+      {loading && (
+          <div className="lds-ripple">
+            <div></div>
+            <div></div>
+          </div>
+        ) }
       <Header headerName="Customer Data" />
       <div className="khata-container">
         {/* Header */}
@@ -370,67 +404,97 @@ const formatDateHeading = (dateKey) => {
                             >
                               <i className="fas fa-sms"></i>
                             </button>
+
+                            {/* Call */}
+                            <button
+                              className="contact-btn call"
+                              onClick={() => {
+                                window.open(`tel:+91${c.phone}`);
+                              }}
+                            >
+                              <i className="fas fa-phone"></i>
+                            </button>
                           </>
                         )}
-</div>
+                      </div>
 
-<div
-  id={`transactions-${c._id}`}   // ✅ unique ID for each customer
-  className="transaction-entries"
->
-  <h3>Entries</h3>
-  {(!c.transactions || c.transactions.length === 0) ? (
-    <p className="no-transactions">No transactions available.</p>
-  ) : (
-    Object.entries(
-      groupTransactionsByDate(
-        c.transactions.sort((a, b) => new Date(b.date) - new Date(a.date))
-      )
-    ).map(([dateKey, entries]) => (
-      <div key={dateKey} className="date-group">
-        <div className="date-header">{formatDateHeading(dateKey)}</div>
-        {entries.map((t, i) => (
-          <div key={i} className="entry-card">
-            <div className="entry-header">
-              <span>
-                {new Date(t.date).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-              <span className="balance">
-                Bal. {formatCurrency(t.balance || 0)}
-              </span>
-            </div>
-            <div className="entry-body">
-              <div
-                className={`amount ${
-                  t.type === "received" ? "received" : "gave"
-                }`}
-              >
-                {t.type === "received" ? `₹ ${t.amount}` : ""}
-              </div>
-              <div
-                className={`amount ${
-                  t.type === "gave" ? "gave" : "received"
-                }`}
-              >
-                {t.type === "gave" ? `₹ ${t.amount}` : ""}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    ))
-  )}
+                      <div
+                        id={`transactions-${c._id}`} // ✅ unique ID for each customer
+                        className="transaction-entries"
+                      >
+                        <h3>Entries</h3>
+                        {!c.transactions || c.transactions.length === 0 ? (
+                          <p className="no-transactions">
+                            No transactions available.
+                          </p>
+                        ) : (
+                          Object.entries(
+                            groupTransactionsByDate(
+                              calculateRunningBalances(
+                                c.transactions.sort(
+                                  (a, b) => new Date(a.date) - new Date(b.date)
+                                ) // sort ASC first
+                              ).sort(
+                                (a, b) => new Date(b.date) - new Date(a.date)
+                              )
+                            )
+                          ).map(([dateKey, entries]) => (
+                            <div key={dateKey} className="date-group">
+                              <div className="date-header">
+                                {formatDateHeading(dateKey)}
+                              </div>
+                              {entries.map((t, i) => (
+                                <div key={i} className="entry-card">
+                                  <div className="entry-header">
+                                    <span>
+                                      {new Date(t.date).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                    <span
+                                      className={`balance ${
+                                        t.balance < 0 ? "green" : "red"
+                                      }`}
+                                    >
+                                      Bal.{" "}
+                                      {formatCurrency(Math.abs(t.balance) || 0)}
+                                    </span>
+                                  </div>
+                                  <div className="entry-body">
+                                    <div
+                                      className={`amount ${
+                                        t.type === "received"
+                                          ? "received"
+                                          : "gave"
+                                      }`}
+                                    >
+                                      {t.type === "received"
+                                        ? `₹ ${t.amount}`
+                                        : ""}
+                                    </div>
+                                    <div
+                                      className={`amount ${
+                                        t.type === "gave" ? "gave" : "received"
+                                      }`}
+                                    >
+                                      {t.type === "gave" ? `₹ ${t.amount}` : ""}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ))
+                        )}
 
-  {/* ✅ Download button stays inside the same section */}
-  <button className="btn-download" onClick={() => handleDownloadPDF(c)}>
-    <i className="fas fa-download"></i> Download PDF
-  </button>
-</div>
-
-
+                        {/* ✅ Download button stays inside the same section */}
+                        <button
+                          className="btn-download"
+                          onClick={() => handleDownloadPDF(c)}
+                        >
+                          <i className="fas fa-download"></i> Download PDF
+                        </button>
+                      </div>
                     </>
                   )}
 
@@ -460,7 +524,6 @@ const formatDateHeading = (dateKey) => {
                             )}
                           </button>
                         )}
-
                         {activeTransaction.type === "gave" && (
                           <button
                             className="btn-confirm-gave"
