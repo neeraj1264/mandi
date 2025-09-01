@@ -1,5 +1,6 @@
 :root {
-  --bg: #ED6629;
+  --bg:  #0c2247;
+  --gredientBG: linear-gradient(135deg, #0c2247 0%, #32425f 100%);
   --in: #2d3748;
   --out: #1a202c;
   --light: #edf2f7;

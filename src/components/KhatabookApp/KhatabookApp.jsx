@@ -9,6 +9,7 @@ export default function KhataBook() {
   const [customers, setCustomers] = useState([]);
   const [newCustomer, setNewCustomer] = useState({ name: "", phone: "" });
   const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [activeTransaction, setActiveTransaction] = useState(null);
   const [expandedCustomer, setExpandedCustomer] = useState(null);
@@ -71,8 +72,10 @@ export default function KhataBook() {
       await addKhataTransaction(customerId, {
         type,
         amount: parseFloat(amount),
+        description: description || "",
       });
       setAmount("");
+      setDescription("");
       setActiveTransaction(null);
       await loadCustomers();
     } catch (err) {
@@ -194,11 +197,11 @@ export default function KhataBook() {
   return (
     <>
       {loading && (
-          <div className="lds-ripple">
-            <div></div>
-            <div></div>
-          </div>
-        ) }
+        <div className="lds-ripple">
+          <div></div>
+          <div></div>
+        </div>
+      )}
       <Header headerName="Customer Data" />
       <div className="khata-container">
         {/* Header */}
@@ -368,6 +371,60 @@ export default function KhataBook() {
                         </button>
                       </div>
 
+                      {/* Transaction Input */}
+                      {activeTransaction?.customerId === c._id && (
+                        <div className="transaction-input">
+                          <input
+                            type="number"
+                            placeholder="Enter amount"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                          />
+                          <input
+                            type="text"
+                            placeholder="description (optional)"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                          />
+                          <div className="transaction-actions">
+                            {activeTransaction.type === "received" && (
+                              <button
+                                className="btn-confirm-received"
+                                onClick={() =>
+                                  handleTransaction(c._id, "received")
+                                }
+                                disabled={loadingTransaction}
+                              >
+                                {loadingTransaction ? (
+                                  <i className="fas fa-spinner fa-spin"></i> // ⏳ spinner icon
+                                ) : (
+                                  <>
+                                    <i className="fas fa-check"></i> Confirm
+                                    Received
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            {activeTransaction.type === "gave" && (
+                              <button
+                                className="btn-confirm-gave"
+                                onClick={() => handleTransaction(c._id, "gave")}
+                                disabled={loadingTransaction}
+                              >
+                                {loadingTransaction ? (
+                                  <i className="fas fa-spinner fa-spin"></i>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-check"></i> Confirm
+                                    Paid
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Contact Row */}
                       <div className="contact-row">
                         {owed > 0 && (
@@ -481,6 +538,13 @@ export default function KhataBook() {
                                       {t.type === "gave" ? `₹ ${t.amount}` : ""}
                                     </div>
                                   </div>
+
+                                  {/* ✅ Show description if exists */}
+                                  {t.description && (
+                                    <div className="entry-description">
+                                      <small>{t.description}</small>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -496,51 +560,6 @@ export default function KhataBook() {
                         </button>
                       </div>
                     </>
-                  )}
-
-                  {/* Transaction Input */}
-                  {activeTransaction?.customerId === c._id && (
-                    <div className="transaction-input">
-                      <input
-                        type="number"
-                        placeholder="Enter amount"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                      />
-                      <div className="transaction-actions">
-                        {activeTransaction.type === "received" && (
-                          <button
-                            className="btn-confirm-received"
-                            onClick={() => handleTransaction(c._id, "received")}
-                            disabled={loadingTransaction}
-                          >
-                            {loadingTransaction ? (
-                              <i className="fas fa-spinner fa-spin"></i> // ⏳ spinner icon
-                            ) : (
-                              <>
-                                <i className="fas fa-check"></i> Confirm
-                                Received
-                              </>
-                            )}
-                          </button>
-                        )}
-                        {activeTransaction.type === "gave" && (
-                          <button
-                            className="btn-confirm-gave"
-                            onClick={() => handleTransaction(c._id, "gave")}
-                            disabled={loadingTransaction}
-                          >
-                            {loadingTransaction ? (
-                              <i className="fas fa-spinner fa-spin"></i>
-                            ) : (
-                              <>
-                                <i className="fas fa-check"></i> Confirm Paid
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
                   )}
                 </div>
               );

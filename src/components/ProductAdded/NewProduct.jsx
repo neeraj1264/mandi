@@ -377,7 +377,7 @@ const NewProduct = ({ setSelectedProducts }) => {
 
       <div className="create-invoice-btn"  onClick={handleAddProduct}>
 
-        <button className="invoice-next-btn" >
+        <button className="invoice-next-btn"  style={{borderRadius: 0}}>
           <h2>
             {" "}
             Add Product

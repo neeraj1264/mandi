@@ -27,7 +27,7 @@
 }
 
 .khata-title i {
-  color: #ff5a00;
+  color: var(--bg);
   font-size: 1.8rem;
 }
 
@@ -40,13 +40,13 @@
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #ff5a00;
+  color: var(--bg);
   cursor: pointer;
 }
 
 /* Balance Summary */
 .balance-summary {
-  background: linear-gradient(135deg, #fe4800 0%, #534d4d 100%);
+  background: linear-gradient(135deg, #0c2247 0%, #32425f 100%);
   color: white;
   border-radius: 15px;
   padding: 20px;
@@ -171,7 +171,7 @@
 .customer-avatar {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #ed6629, #ff8c42);
+  background: var(--gredientBG);
   color: white;
   font-size: 1.2rem;
   border-radius: 50%;
@@ -183,6 +183,14 @@
   flex-shrink: 0;
 }
 
+.entry-description {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #444;
+  word-wrap: break-word;   /* Break long words */
+  overflow-wrap: break-word; 
+  white-space: normal;     /* Prevent text from staying in one line */
+}
 .customer-details {
   flex: 1;
 }

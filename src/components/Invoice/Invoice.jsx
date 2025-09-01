@@ -286,7 +286,6 @@ export default function Invoice() {
 
                     return (
                       <div key={idx}>
-                        <hr />
                         <div className="main-box">
                           <div
                             className="sub-box"
@@ -357,6 +356,8 @@ export default function Invoice() {
                             </div>
                           )}
                         </div>
+                                                <hr />
+
                       </div>
                     );
                   })}

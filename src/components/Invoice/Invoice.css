@@ -78,11 +78,12 @@
   right: 1.8rem;
 }
 .category {
-  font-size: 24px;
-  line-height: 36px;
-  font-weight: 600;
-  margin-bottom: 0;
-  padding: 15px 15px 0;
+    font-size: 28px;
+    line-height: 40px;
+    font-weight: 600;
+    margin-bottom: 0;
+    text-align: center;
+        padding-top: 3rem;
 
 }
 
@@ -124,17 +125,8 @@
   color: var(--bg);
   border: none;
 }
-.main {
-  background: #eee;
-  padding: 4rem 0;
-}
-.category-container {
-  border-radius: 10px;
-  background-color: #fff;
-  background-clip: border-box;
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  margin: 1rem;
-}
+
+
 .main-box {
   display: flex;
   justify-content: space-between;
@@ -201,6 +193,7 @@
   border: 1px solid var(--bg);
   box-sizing: border-box;
   border-radius: 25px;
+  background: white;
 }
 
 .quantity-btns {
@@ -223,60 +216,55 @@
   border: none;
 }
 
-/* .done {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  background: var(--bg);
-  color: white;
-  font-size: 1.4rem;
-  padding: 0.2rem 0.8rem;
-  border-radius: 0.7rem;
-} */
 
 .invoice-btn {
-  position: fixed;
-  bottom: 0;
-  display: flex;
-  /* justify-content: space-between; */
-  width: calc(100%);
-  /* padding: 0 0.5rem; */
-  background: transparent;
-  z-index: 2;
+    position: fixed;
+    bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    width: calc(100%);
+    /* padding: 0 0.5rem; */
+    background: transparent;
+    z-index: 2;
 }
 
 .invoice-btn button {
-  display: flex;
-  width: 50%;
-  /* border: none; */
+    display: flex;
+    width: 45%;
+    margin: 0;
+    border: none;
+}
+.category-container{
+  background-color: #eee;
 }
 .invoice-next-btn{
-  color: white;
-  margin: auto;
-  padding: 10px;
-  font-size: 1rem;
-  background: var(--bg);
-  border-radius: 0 1rem 0 0;
+color: white;
+    margin: auto;
+    padding: 10px;
+    font-size: 1rem;
+    background: var(--gredientBG);
+    border-radius: 0 .6rem .6rem 0;
 }
 .invoice-next-btn h2{
-  margin: auto;
-  font-size: 1.2rem;
-  color: white;
-  font-weight: bold;
+    margin: auto;
+    font-size: 1.2rem;
+    color: white;
+    font-weight: bold;
 }
 .invoice-kot-btn{
-  color: white;
-  margin: auto;
-  padding: 10px;
-  font-size: 1rem;
-  background: white;
-  border-radius: 1rem 0 0 0;
+    color: white;
+    margin: auto;
+    padding: 10px;
+    font-size: 1rem;
+    background: white;
+    border-radius: .6rem 0 0 .6rem;
+    border: 2px solid var(--bg) !important;
 }
 .invoice-kot-btn h2{
-  margin: auto;
-  font-size: 1.2rem;
-  color: var(--bg);
-  font-weight: bold;
+    margin: auto;
+    font-size: 1.2rem;
+    color: var(--bg);
+    font-weight: bold;
 }
 .Invoice-arrow {
   font-size: 0.8rem !important;
