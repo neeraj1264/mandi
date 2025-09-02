@@ -78,13 +78,11 @@
   right: 1.8rem;
 }
 .category {
-    font-size: 28px;
-    line-height: 40px;
-    font-weight: 600;
-    margin-bottom: 0;
-    text-align: center;
-        padding-top: 3rem;
-
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 600;
+  margin-bottom: 0;
+  text-align: center;
 }
 
 .category-bar {
@@ -126,7 +124,6 @@
   border: none;
 }
 
-
 .main-box {
   display: flex;
   justify-content: space-between;
@@ -148,7 +145,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   word-wrap: break-word;
-  padding-left: .7rem;
+  padding-left: 0.7rem;
 }
 
 .p-name {
@@ -159,11 +156,11 @@
   line-height: 30px;
   font-weight: 600;
 }
-.p-name-price{
+.p-name-price {
   font-weight: 600;
   font-size: 17px;
   line-height: 25.5px;
-  color: var(--bg)
+  color: var(--bg);
 }
 .sub-box h3 {
   margin: 0;
@@ -216,55 +213,58 @@
   border: none;
 }
 
-
 .invoice-btn {
-    position: fixed;
-    bottom: 1rem;
-    display: flex;
-    justify-content: center;
-    width: calc(100%);
-    /* padding: 0 0.5rem; */
-    background: transparent;
-    z-index: 2;
+  position: fixed;
+  bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  width: calc(100%);
+  /* padding: 0 0.5rem; */
+  background: transparent;
+  z-index: 2;
 }
 
 .invoice-btn button {
-    display: flex;
-    width: 45%;
-    margin: 0;
-    border: none;
+  display: flex;
+  width: 45%;
+  margin: 0;
+  border: none;
+  box-shadow: 0px 0px 6px 0px var(--bg);
 }
-.category-container{
+.main {
+  padding: 4rem 0;
+}
+.category-container {
   background-color: #eee;
 }
-.invoice-next-btn{
-color: white;
-    margin: auto;
-    padding: 10px;
-    font-size: 1rem;
-    background: var(--gredientBG);
-    border-radius: 0 .6rem .6rem 0;
+.invoice-next-btn {
+  color: white;
+  margin: auto;
+  padding: 10px;
+  font-size: 1rem;
+  background: var(--gredientBG);
+  border-radius: 0 0.6rem 0.6rem 0;
 }
-.invoice-next-btn h2{
-    margin: auto;
-    font-size: 1.2rem;
-    color: white;
-    font-weight: bold;
+.invoice-next-btn h2 {
+  margin: auto;
+  font-size: 1.2rem;
+  color: white;
+  font-weight: bold;
 }
-.invoice-kot-btn{
-    color: white;
-    margin: auto;
-    padding: 10px;
-    font-size: 1rem;
-    background: white;
-    border-radius: .6rem 0 0 .6rem;
-    border: 2px solid var(--bg) !important;
+.invoice-kot-btn {
+  color: white;
+  margin: auto;
+  padding: 10px;
+  font-size: 1rem;
+  background: white;
+  border-radius: 0.6rem 0 0 0.6rem;
+  border: 2px solid var(--bg) !important;
 }
-.invoice-kot-btn h2{
-    margin: auto;
-    font-size: 1.2rem;
-    color: var(--bg);
-    font-weight: bold;
+.invoice-kot-btn h2 {
+  margin: auto;
+  font-size: 1.2rem;
+  color: var(--bg);
+  font-weight: bold;
 }
 .Invoice-arrow {
   font-size: 0.8rem !important;
@@ -392,8 +392,8 @@ h3 {
 }
 
 input[type="checkbox"] {
-    accent-color: var(--bg); /* Set your desired color */
-  }
+  accent-color: var(--bg); /* Set your desired color */
+}
 
 .save-btn {
   display: block;
@@ -425,15 +425,15 @@ input[type="checkbox"] {
 /* modal overlay that covers the whole screen and blurs background */
 .modal-overlay {
   position: fixed;
-  inset: 0;                      /* top:0; right:0; bottom:0; left:0 */
+  inset: 0; /* top:0; right:0; bottom:0; left:0 */
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.35); /* semi-transparent dark tint */
-  backdrop-filter: blur(6px);     /* desktop blur */
+  backdrop-filter: blur(6px); /* desktop blur */
   -webkit-backdrop-filter: blur(6px); /* iOS/Safari support */
-  z-index: 9999;                  /* always on top */
-  padding: 1rem;                  /* safe spacing on small screens */
+  z-index: 9999; /* always on top */
+  padding: 1rem; /* safe spacing on small screens */
 }
 
 /* modal card centered inside overlay */
@@ -442,19 +442,28 @@ input[type="checkbox"] {
   max-width: 520px; /* adjust width as you like */
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   padding: 1.25rem;
   transform-origin: center;
-  animation: modalPop .12s ease-out;
+  animation: modalPop 0.12s ease-out;
 }
 
 /* optional gentle pop animation */
 @keyframes modalPop {
-  from { transform: translateY(-6px) scale(.995); opacity: 0; }
-  to   { transform: translateY(0) scale(1); opacity: 1; }
+  from {
+    transform: translateY(-6px) scale(0.995);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 /* small responsive tweaks */
 @media (max-width: 420px) {
-  .modal-card { border-radius: 12px; padding: 1rem; }
+  .modal-card {
+    border-radius: 12px;
+    padding: 1rem;
+  }
 }
