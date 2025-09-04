@@ -29,7 +29,19 @@ export default function KhataBook() {
     try {
       setLoading(true);
       const data = await fetchcustomerdata();
-      setCustomers(data);
+
+       // sort customers by last transaction date (latest first)
+    const sorted = data.sort((a, b) => {
+      const aDate = a.transactions?.length
+        ? new Date(a.transactions[a.transactions.length - 1].date)
+        : new Date(0); // if no transaction, put at bottom
+      const bDate = b.transactions?.length
+        ? new Date(b.transactions[b.transactions.length - 1].date)
+        : new Date(0);
+
+      return bDate - aDate; // descending order
+    });
+      setCustomers(sorted);
     } catch (err) {
       console.error("Failed to load customers:", err);
     } finally {
