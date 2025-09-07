@@ -237,7 +237,7 @@
   padding: 4rem 0;
 }
 .category-container {
-  background-color: #eee;
+  background-color: var(--wheat);
 }
 .invoice-next-btn {
   color: white;
@@ -258,9 +258,9 @@
   margin: auto;
   padding: 10px;
   font-size: 1rem;
-  background: white;
+  background: var(--wheat);
   border-radius: 0.6rem 0 0 0.6rem;
-  border: 2px solid var(--bg) !important;
+  border: 2px solid #4a6e71 !important;
 }
 .invoice-kot-btn h2 {
   margin: auto;

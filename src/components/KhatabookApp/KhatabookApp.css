@@ -46,7 +46,7 @@
 
 /* Balance Summary */
 .balance-summary {
-  background: linear-gradient(135deg, #0c2247 0%, #32425f 100%);
+  background: var(--gredientBG);
   color: white;
   border-radius: 15px;
   padding: 20px;

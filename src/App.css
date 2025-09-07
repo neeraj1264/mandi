@@ -1,9 +1,10 @@
 :root {
-  --bg:  #0c2247;
-  --gredientBG: linear-gradient(135deg, #0c2247 0%, #32425f 100%);
+  --bg:  #0d2729;
+  --gredientBG: linear-gradient(135deg, #2f4e50 0%, #0d2729 100%);
   --in: #2d3748;
   --out: #1a202c;
   --light: #edf2f7;
+  --wheat: #f5f2ed;
 }
 
 body{
